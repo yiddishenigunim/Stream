@@ -947,6 +947,34 @@
             nextTrack();
         };
         
+        // Handle errors - skip to next track
+        audioPlayer.onerror = () => {
+            console.log('Error loading track, skipping to next...');
+            setTimeout(() => nextTrack(), 1000);
+        };
+        
+        // Handle stalled playback - if stuck for too long, skip
+        let stallTimeout = null;
+        
+        audioPlayer.onwaiting = () => {
+            // If waiting for more than 10 seconds, skip to next
+            if (stallTimeout) clearTimeout(stallTimeout);
+            stallTimeout = setTimeout(() => {
+                if (audioPlayer.paused || audioPlayer.readyState < 3) {
+                    console.log('Playback stalled, skipping to next...');
+                    nextTrack();
+                }
+            }, 10000);
+        };
+        
+        audioPlayer.onplaying = () => {
+            // Clear stall timeout when playing resumes
+            if (stallTimeout) {
+                clearTimeout(stallTimeout);
+                stallTimeout = null;
+            }
+        };
+        
         // Update play button when audio state changes
         audioPlayer.onpause = () => {
             isPlaying = false;
