@@ -976,7 +976,7 @@
                     <div class="error-icon">⚠️</div>
                     <p class="error-small">ביטע אנטשולדיגן</p>
                     <h2>דער סערווער איז צייטווייליג איבערגעשטרענגט</h2>
-                    <p>ביטע פרובירט נאכאמאל שפעטער.</p>
+                    <p>ביטע פרובירט נאכאמאל אין א פאר מינוט.</p>
                     <button onclick="location.reload()">פרובירט נאכאמאל</button>
                 </div>
             `;
@@ -1146,32 +1146,20 @@
             nextTrack();
         };
         
-        // Handle errors - skip to next track
+        // Handle errors - show message but don't skip
         audioPlayer.onerror = () => {
-            console.log('Error loading track, skipping to next...');
-            setTimeout(() => nextTrack(), 1000);
+            console.log('Error loading track');
+            nowPlayingTitle.textContent = 'טרעפט נישט צו לאדן...';
         };
         
-        // Handle stalled playback - if stuck for too long, skip
-        let stallTimeout = null;
-        
+        // Handle stalled playback - just show message
         audioPlayer.onwaiting = () => {
-            // If waiting for more than 10 seconds, skip to next
-            if (stallTimeout) clearTimeout(stallTimeout);
-            stallTimeout = setTimeout(() => {
-                if (audioPlayer.paused || audioPlayer.readyState < 3) {
-                    console.log('Playback stalled, skipping to next...');
-                    nextTrack();
-                }
-            }, 10000);
+            // Show loading indicator
+            nowPlayingTitle.textContent = 'לאָדט...';
         };
         
         audioPlayer.onplaying = () => {
-            // Clear stall timeout when playing resumes
-            if (stallTimeout) {
-                clearTimeout(stallTimeout);
-                stallTimeout = null;
-            }
+            // Restore track name when playing
         };
         
         // Update play button when audio state changes
