@@ -939,7 +939,6 @@
                 const response = await fetch(`${API_URL}/?folder=${encodeURIComponent(folderPath)}`);
                 
                 if (!response.ok) {
-                    showErrorMessage();
                     throw new Error('Server error');
                 }
                 
