@@ -819,7 +819,7 @@
                 </div>
                 
                 <div class="now-playing">
-                    <div class="now-playing-title" id="now-playing-title">לאָדט ניגונים...</div>
+                    <div class="now-playing-title" id="now-playing-title">לאודט ניגונים...</div>
                 </div>
                 
                 <audio id="audio-player"></audio>
@@ -911,7 +911,7 @@
                 startPlaying('marshn');
                 
             } catch (error) {
-                nowPlayingTitle.textContent = 'גרייז ביים לאָדן...';
+                nowPlayingTitle.textContent = 'גרייז ביים לאודן...';
             }
         };
         
@@ -980,7 +980,7 @@
                     <button class="error-close" onclick="document.getElementById('error-overlay').remove()">✕</button>
                     <div class="error-icon">⚠️</div>
                     <p class="error-small">ביטע אנטשולדיגן</p>
-                    <h2>דער סערווער איז צייטווייליג איבערגעשטרענגט</h2>
+                    <h2>עפעס איז געגאנגען נישט גוט דא...</h2>
                     <p>ביטע פרובירט נאכאמאל אין א פאר מינוט.</p>
                     <p class="error-small">אויב עס ארבעט נאך אלץ נישט, ביטע טשעקט מיט אייער פילטער.</p>
                     <button onclick="location.reload()">פרובירט נאכאמאל</button>
@@ -992,7 +992,7 @@
         async function startPlaying(category) {
             // Show loading if not loaded yet
             if (!allSongs[category] || allSongs[category].length === 0) {
-                nowPlayingTitle.textContent = 'לאָדט...';
+                nowPlayingTitle.textContent = 'לאודט...';
                 try {
                     await loadFolder(category);
                 } catch (error) {
@@ -1209,7 +1209,7 @@
             
             if (totalRetriesThisSession >= MAX_TOTAL_RETRIES) {
                 retryPaused = true;
-                nowPlayingTitle.textContent = 'ביטע רעפרעשט די זייט';
+                nowPlayingTitle.textContent = 'ביטע ריפרעשט די פעיזש';
                 console.log('Too many retries, pausing automatic retries');
                 return;
             }
@@ -1237,7 +1237,7 @@
                     }
                 }, waitTime);
             } else {
-                nowPlayingTitle.textContent = 'טרעפט נישט צו לאדן — דריקט ▶';
+                nowPlayingTitle.textContent = 'טרעפט נישט צו לאודן — דריקט ▶';
                 retryCount = 0;
             }
         };
@@ -1250,7 +1250,7 @@
         audioPlayer.onwaiting = () => {
             // Show loading indicator only if not paused
             if (!retryPaused) {
-                nowPlayingTitle.textContent = 'לאָדט...';
+                nowPlayingTitle.textContent = 'לאודט...';
             }
         };
         
@@ -1261,7 +1261,7 @@
             }
             
             console.log('Playback stalled, recovery attempt:', stallRecoveryCount);
-            nowPlayingTitle.textContent = 'מחבר מחדש...';
+            nowPlayingTitle.textContent = 'קאנעקשאן פראבע...';
             
             // Clear any existing timer
             if (stallTimer) clearTimeout(stallTimer);
@@ -1274,7 +1274,7 @@
                     
                     if (totalRetriesThisSession >= MAX_TOTAL_RETRIES) {
                         retryPaused = true;
-                        nowPlayingTitle.textContent = 'ביטע רעפרעשט די זייט';
+                        nowPlayingTitle.textContent = 'ביטע ריפרעשט די פעיזש';
                         return;
                     }
                     
