@@ -1013,6 +1013,16 @@
         }
         
         async function startPlaying(category) {
+            // For vocali, re-check folder path each time (time-dependent)
+            if (category === 'vocali') {
+                const newPath = getSefiraFolder();
+                if (_lastVocaliPath !== newPath) {
+                    allSongs['vocali'] = [];
+                    _lastVocaliPath = newPath;
+                    FOLDERS['vocali'] = newPath;
+                }
+            }
+
             // Show loading if not loaded yet
             if (!allSongs[category] || allSongs[category].length === 0) {
                 nowPlayingTitle.textContent = 'לאודט...';
