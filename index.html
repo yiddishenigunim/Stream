@@ -1202,7 +1202,16 @@
         
         function nextTrack() {
             if (currentPlaylist.length === 0) return;
-            
+
+            // If playing vocali and the time-based folder changed, reload
+            if (currentCategory === 'vocali') {
+                const newPath = getSefiraFolder();
+                if (_lastVocaliPath !== newPath) {
+                    startPlaying('vocali');
+                    return;
+                }
+            }
+
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
             playCurrentTrack();
         }
