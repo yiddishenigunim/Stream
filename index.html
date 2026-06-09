@@ -1157,8 +1157,16 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .category-buttons {
+            body:not(.has-active-player) .category-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
                 gap: 12px;
+            }
+            body:not(.has-active-player) .category-btn {
+                flex: 1 1 calc(33.333% - 12px);
+                min-width: 100px;
+                max-width: 220px;
             }
             .player {
                 padding: 25px 30px;
@@ -1182,6 +1190,21 @@
             }
             .category-label {
                 font-size: 0.78em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-section {
+                padding: 15px 15px 15px;
+            }
+            body:not(.has-active-player) .category-buttons {
+                gap: 10px;
+            }
+            body:not(.has-active-player) .category-btn {
+                flex: 1 1 calc(50% - 10px);
+                min-width: 110px;
+                max-width: 180px;
+                border-radius: 16px;
             }
         }
     </style>
