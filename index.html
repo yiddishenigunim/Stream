@@ -6,6 +6,85 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Analytics (gtag.js). Events are sent to BOTH the unified
+         Oytzer property (G-0GYJLY2BYD, shared with oitzerhanigunim.org — same
+         registrable domain, so sessions stay continuous across subdomains)
+         AND the dedicated stream property (G-2BRJN80VYZ). One gtag load feeds
+         both; gtag('event', ...) fans out to every configured property. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GYJLY2BYD"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        // Consent Mode v2 — denied by default in EU/UK/EEA, granted elsewhere.
+        // Call window.acceptAnalyticsConsent() from a banner if one is added.
+        gtag('consent', 'default', {
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            analytics_storage: 'granted'
+        });
+        gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            region: ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','GB','CH','NO','IS','LI']
+        });
+        window.acceptAnalyticsConsent = function () {
+            gtag('consent', 'update', {
+                analytics_storage: 'granted',
+                ad_storage: 'granted',
+                ad_user_data: 'granted',
+                ad_personalization: 'granted'
+            });
+            try { localStorage.setItem('oytzer:analytics_consent', 'granted'); } catch (_) {}
+        };
+        try {
+            if (localStorage.getItem('oytzer:analytics_consent') === 'granted') {
+                window.acceptAnalyticsConsent();
+            }
+        } catch (_) {}
+
+        // Debug Mode — only on localhost or ?debug=1. Events surface in GA4
+        // DebugView in near real time.
+        var _isDebugAnalytics = location.hostname === 'localhost'
+            || location.hostname === '127.0.0.1'
+            || location.search.indexOf('debug=1') !== -1;
+        gtag('config', 'G-0GYJLY2BYD', { debug_mode: _isDebugAnalytics });
+        gtag('config', 'G-2BRJN80VYZ', { debug_mode: _isDebugAnalytics });
+    </script>
+
+    <!-- Web Vitals (Core Web Vitals): tiny CDN module reports LCP/CLS/INP/FCP/TTFB. -->
+    <script type="module">
+        import { onCLS, onLCP, onINP, onFCP, onTTFB } from 'https://unpkg.com/web-vitals@4?module';
+        const send = ({ name, value, rating }) => {
+            if (window.Analytics) window.Analytics.webVital(name, value, rating);
+        };
+        onCLS(send); onLCP(send); onINP(send); onFCP(send); onTTFB(send);
+    </script>
+
+    <!-- Global JS error reporting → GA4 `exception` events. -->
+    <script>
+        window.addEventListener('error', function (e) {
+            if (window.Analytics) window.Analytics.jsError({
+                description: (e && e.message) || 'error',
+                source: (e && e.filename) || '',
+                line: (e && e.lineno) || 0,
+                fatal: true
+            });
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            var reason = e && e.reason;
+            if (window.Analytics) window.Analytics.jsError({
+                description: (reason && (reason.message || String(reason))) || 'unhandled rejection',
+                fatal: false
+            });
+        });
+    </script>
+
     <title>חסידישע ניגונים סטרימינג</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18V5l12-2v13'></path><circle cx='6' cy='18' r='3'></circle><circle cx='18' cy='16' r='3'></circle></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1209,15 +1288,6 @@
         }
     </style>
 </head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2BRJN80VYZ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-2BRJN80VYZ');
-</script>  
     <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "c549cb739190444da167bf2f643cb147"}'></script><!-- End Cloudflare Web Analytics -->
     <body>
     <!-- Theme background overlay -->
@@ -1397,6 +1467,191 @@
         </footer>
     </div>
 
+    <!-- ───────────────────────────────────────────────────────────────
+         Stream analytics wrapper. Every user interaction routes through
+         Analytics.* so event names + param shapes live in one place. The
+         gtag() loader is in <head>; events flow to both configured GA4
+         properties automatically. Every call is a no-op if gtag is blocked
+         (ad-blocker / offline / consent denied).
+         ─────────────────────────────────────────────────────────────── -->
+    <script>
+    const Analytics = {
+        _send(name, params) {
+            if (typeof gtag !== 'function') return;
+            try { gtag('event', name, params || {}); } catch (_) {}
+        },
+
+        // ── Category / station selection ───────────────────────────────
+        categorySelected(category, type) {
+            this._send('category_selected', {
+                category: category || '',
+                category_type: type || ''      // 'genre' or 'moadim'
+            });
+        },
+        categoryLoaded(opts) {
+            this._send('category_loaded', {
+                category: opts.category || '',
+                track_count: opts.count || 0,
+                from_cache: !!opts.fromCache
+            });
+        },
+        categoryLoadFailed(opts) {
+            this._send('category_load_failed', {
+                category: opts.category || '',
+                error_message: (opts.errorMessage || 'unknown')
+            });
+        },
+
+        // ── Playback ───────────────────────────────────────────────────
+        songPlay(opts) {
+            this._send('song_play', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                track_index: opts.trackIndex,
+                playlist_size: opts.playlistSize,
+                source: opts.source || 'unknown'   // category / next / prev / auto
+            });
+        },
+        songCompleted(opts) {
+            this._send('song_play_completed', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                duration_seconds: Math.round(opts.durationSeconds || 0)
+            });
+        },
+        // 25 / 50 / 75 % milestones — at most once per track per playback.
+        songMilestone(opts) {
+            this._send('song_play_milestone', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                milestone: opts.milestone
+            });
+        },
+        songSkip(opts) {
+            this._send('song_skip', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                direction: opts.direction || 'next',     // next / prev
+                percent_played: opts.percentPlayed,
+                source: opts.source || 'manual'          // manual / keyboard
+            });
+        },
+        playPaused(opts) {
+            this._send('play_paused', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                played_seconds: Math.round(opts.playedSeconds || 0)
+            });
+        },
+        playResumed(opts) {
+            this._send('play_resumed', {
+                category: opts.category || '',
+                track_name: opts.trackName || ''
+            });
+        },
+        seekAction(opts) {
+            this._send('seek_action', {
+                category: opts.category || '',
+                from_seconds: Math.round(opts.fromSeconds || 0),
+                to_seconds: Math.round(opts.toSeconds || 0),
+                duration_seconds: Math.round(opts.durationSeconds || 0)
+            });
+        },
+        volumeChanged(opts) {
+            this._send('volume_changed', {
+                to_volume: Math.round((opts.toVolume || 0) * 100)
+            });
+        },
+        keyboardShortcut(key) {
+            this._send('keyboard_shortcut', { key: key || '' });
+        },
+
+        // ── Errors / reliability ───────────────────────────────────────
+        playbackError(opts) {
+            this._send('playback_error', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                retry_count: opts.retryCount || 0
+            });
+        },
+        playbackGaveUp(opts) {
+            this._send('playback_gave_up', {
+                category: opts.category || '',
+                track_name: opts.trackName || ''
+            });
+        },
+        playbackStalled(opts) {
+            this._send('playback_stalled', {
+                category: opts.category || '',
+                track_name: opts.trackName || ''
+            });
+        },
+        apiError(opts) {
+            this._send('api_error', {
+                endpoint: opts.endpoint || '',
+                error_message: (opts.errorMessage || '').slice(0, 150)
+            });
+        },
+        jsError(opts) {
+            this._send('exception', {
+                description: (opts.description || '').slice(0, 150),
+                source: opts.source || '',
+                line: opts.line || 0,
+                fatal: !!opts.fatal
+            });
+        },
+
+        // ── Outbound / performance ─────────────────────────────────────
+        outboundClick(opts) {
+            this._send('click', {
+                link_url: opts.url || '',
+                link_domain: opts.domain || '',
+                outbound: true
+            });
+        },
+        webVital(name, value, rating) {
+            this._send('web_vitals', {
+                metric_name: name,
+                metric_value: Math.round(name === 'CLS' ? value * 1000 : value),
+                metric_rating: rating || ''
+            });
+        },
+
+        // ── Session quality ────────────────────────────────────────────
+        firstPlay() { this._send('first_play', {}); },
+        sessionEngaged() { this._send('session_engaged', {}); },   // 30s engaged
+        sessionDeep() { this._send('session_deep', {}); }          // 5+ plays
+    };
+    window.Analytics = Analytics;
+
+    // Session engagement: fire once at 30s of focused/visible time.
+    (function initSessionTracking() {
+        let engagedSeconds = 0, engagedFired = false;
+        setInterval(() => {
+            if (document.visibilityState === 'visible' && document.hasFocus()) {
+                engagedSeconds++;
+                if (!engagedFired && engagedSeconds >= 30) {
+                    engagedFired = true;
+                    Analytics.sessionEngaged();
+                }
+            }
+        }, 1000);
+    })();
+
+    // Outbound link tracking for the footer links (project + email).
+    window.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.site-footer a[href]').forEach(a => {
+            a.addEventListener('click', () => {
+                try {
+                    let domain = '';
+                    try { domain = new URL(a.href, location.href).hostname; } catch (_) {}
+                    Analytics.outboundClick({ url: a.getAttribute('href') || '', domain });
+                } catch (_) {}
+            });
+        });
+    });
+    </script>
+
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // Create background twinkling notes
         function createBackgroundNotes() {
@@ -1475,6 +1730,12 @@
         let currentIndex = 0;
         let isPlaying = false;
         let currentTrackName = '';
+
+        // ── Analytics state ──
+        let _playSource = 'category';   // how the current track started
+        let _playCount = 0;             // plays this session (for first_play / deep)
+        let _milestonesFired = {};      // per-track 25/50/75 dedupe
+        let _skipLogged = false;        // avoid double-logging one skip
         
         const audioPlayer = document.getElementById('audio-player');
         const playBtn = document.getElementById('play-btn');
@@ -1515,6 +1776,7 @@
                 // Cache valid for 1 hour
                 if (cacheData.timestamp > Date.now() - 3600000) {
                     allSongs[category] = cacheData.files;
+                    Analytics.categoryLoaded({ category, count: cacheData.files.length, fromCache: true });
                     return;
                 }
             }
@@ -1540,14 +1802,17 @@
                 }));
                 
                 allSongs[category] = songs;
-                
+                Analytics.categoryLoaded({ category, count: songs.length, fromCache: false });
+
                 // Save to localStorage cache
                 localStorage.setItem(cacheKey, JSON.stringify({
                     timestamp: Date.now(),
                     files: songs
                 }));
-                
+
             } catch (error) {
+                Analytics.categoryLoadFailed({ category, errorMessage: error && error.message });
+                Analytics.apiError({ endpoint: 'stream-api/folder', errorMessage: (error && error.message) || 'fetch failed' });
                 if (error.message === 'Failed to fetch') {
                     showErrorMessage();
                 }
@@ -1582,6 +1847,10 @@
         }
         
         async function startPlaying(category) {
+            const _catType = ['marshn', 'lebedik', 'shteyt', 'music', 'vocali'].includes(category) ? 'genre' : 'moadim';
+            Analytics.categorySelected(category, _catType);
+            _playSource = 'category';
+
             // For vocali, re-check folder path each time (time-dependent)
             if (category === 'vocali') {
                 const newPath = getSefiraFolder();
@@ -1657,8 +1926,14 @@
         
         function togglePlay() {
             if (audioPlayer.paused) {
+                Analytics.playResumed({ category: currentCategory, trackName: currentTrackName });
                 audioPlayer.play().catch(() => {});
             } else {
+                Analytics.playPaused({
+                    category: currentCategory,
+                    trackName: currentTrackName,
+                    playedSeconds: audioPlayer.currentTime
+                });
                 audioPlayer.pause();
             }
         }
@@ -1728,6 +2003,20 @@
             // Increment track ID to handle race conditions
             currentTrackId++;
             const thisTrackId = currentTrackId;
+
+            // ── Analytics: a new track has started ──
+            _milestonesFired = {};
+            _skipLogged = false;
+            _playCount++;
+            if (_playCount === 1) Analytics.firstPlay();
+            Analytics.songPlay({
+                category: currentCategory,
+                trackName: defaultName,
+                trackIndex: currentIndex,
+                playlistSize: currentPlaylist.length,
+                source: _playSource
+            });
+            if (_playCount === 5) Analytics.sessionDeep();
             
             // Check if this track was preloaded - if so, swap the audio elements
             if (preloadedIndex === currentIndex && preloadAudio.src) {
@@ -1794,8 +2083,28 @@
             });
         }
         
-        function nextTrack() {
+        // Log how much of the outgoing track was heard before a manual skip.
+        // Auto-advance (onended) passes source 'auto' and skips this.
+        function logSkip(direction, source) {
+            if (_skipLogged) return;
+            const dur = audioPlayer.duration;
+            const cur = audioPlayer.currentTime;
+            if (!dur || isNaN(dur) || dur <= 0) return;
+            _skipLogged = true;
+            Analytics.songSkip({
+                category: currentCategory,
+                trackName: currentTrackName,
+                direction: direction,
+                percentPlayed: Math.round((cur / dur) * 100),
+                source: source || 'manual'
+            });
+        }
+
+        function nextTrack(source) {
             if (currentPlaylist.length === 0) return;
+
+            // A manual advance mid-track counts as a skip.
+            if (source !== 'auto') logSkip('next', source || 'manual');
 
             // If playing vocali and the time-based folder changed, reload
             if (currentCategory === 'vocali') {
@@ -1806,20 +2115,29 @@
                 }
             }
 
+            _playSource = (source === 'auto') ? 'auto' : 'next';
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
             playCurrentTrack();
         }
-        
-        function previousTrack() {
+
+        function previousTrack(source) {
             if (currentPlaylist.length === 0) return;
-            
+
+            logSkip('prev', source || 'manual');
+
+            _playSource = 'prev';
             currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
             playCurrentTrack();
         }
         
         // Auto-play next track when current ends
         audioPlayer.onended = () => {
-            nextTrack();
+            Analytics.songCompleted({
+                category: currentCategory,
+                trackName: currentTrackName,
+                durationSeconds: audioPlayer.duration
+            });
+            nextTrack('auto');
         };
         
         // Retry counter for failed loads
@@ -1847,6 +2165,7 @@
                 retryPaused = true;
                 nowPlayingTitle.textContent = 'ביטע ריפרעשט די פעיזש';
                 console.log('Too many retries, pausing automatic retries');
+                Analytics.playbackGaveUp({ category: currentCategory, trackName: currentTrackName });
                 return;
             }
             
@@ -1861,6 +2180,7 @@
                 retryCount++;
                 totalRetriesThisSession++;
                 lastRetryTime = now;
+                Analytics.playbackError({ category: currentCategory, trackName: currentTrackName, retryCount: retryCount });
                 nowPlayingTitle.textContent = `פרובירט נאכאמאל (${retryCount}/${MAX_RETRIES})...`;
                 
                 // Wait with exponential backoff: 5s, 10s, 15s
@@ -1874,6 +2194,7 @@
                 }, waitTime);
             } else {
                 nowPlayingTitle.textContent = 'טרעפט נישט צו לאודן — דריקט ▶';
+                Analytics.playbackGaveUp({ category: currentCategory, trackName: currentTrackName });
                 retryCount = 0;
             }
         };
@@ -1897,6 +2218,7 @@
             }
             
             console.log('Playback stalled, recovery attempt:', stallRecoveryCount);
+            Analytics.playbackStalled({ category: currentCategory, trackName: currentTrackName });
             nowPlayingTitle.textContent = 'קאנעקשאן פראבע...';
             
             // Clear any existing timer
@@ -2018,9 +2340,23 @@
         audioPlayer.ontimeupdate = () => {
             const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             document.getElementById('progress-fill').style.width = progress + '%';
-            
+
             document.getElementById('current-time').textContent = formatTime(audioPlayer.currentTime);
             document.getElementById('total-time').textContent = formatTime(audioPlayer.duration);
+
+            // ── Analytics: 25/50/75% listen milestones (once per track) ──
+            if (isFinite(progress)) {
+                [25, 50, 75].forEach(m => {
+                    if (progress >= m && !_milestonesFired[m]) {
+                        _milestonesFired[m] = true;
+                        Analytics.songMilestone({
+                            category: currentCategory,
+                            trackName: currentTrackName,
+                            milestone: m
+                        });
+                    }
+                });
+            }
         };
         
         // Seek function
@@ -2033,6 +2369,12 @@
             const newTime = percent * audioPlayer.duration;
             
             if (isFinite(newTime)) {
+                Analytics.seekAction({
+                    category: currentCategory,
+                    fromSeconds: audioPlayer.currentTime,
+                    toSeconds: newTime,
+                    durationSeconds: audioPlayer.duration
+                });
                 audioPlayer.currentTime = newTime;
             }
         }
@@ -2044,6 +2386,7 @@
             const percent = (event.clientX - rect.left) / rect.width;
             audioPlayer.volume = Math.max(0, Math.min(1, percent));
             document.getElementById('volume-fill').style.width = (percent * 100) + '%';
+            Analytics.volumeChanged({ toVolume: audioPlayer.volume });
         }
         
         // Format time helper
@@ -2063,13 +2406,16 @@
             
             if (e.code === 'Space') {
                 e.preventDefault(); // Prevent page scrolling
+                Analytics.keyboardShortcut('space');
                 togglePlay();
             } else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                nextTrack();
+                Analytics.keyboardShortcut('arrow_right');
+                nextTrack('keyboard');
             } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                previousTrack();
+                Analytics.keyboardShortcut('arrow_left');
+                previousTrack('keyboard');
             }
         });
     </script>
