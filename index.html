@@ -7,12 +7,10 @@
     <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Google Analytics (gtag.js). Reports into the unified Oytzer property
-         (G-0GYJLY2BYD, shared with oitzerhanigunim.org). Same registrable
-         domain means sessions stay continuous across subdomains. Stream vs
-         main-site traffic is separated in GA by the Hostname dimension
-         (stream.oitzerhanigunim.org). -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0GYJLY2BYD"></script>
+    <!-- Google Analytics (gtag.js). Reports into the dedicated stream
+         property (G-MVW6S6P1XP) — separate from the main site so stream
+         numbers stay isolated. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MVW6S6P1XP"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
@@ -53,7 +51,7 @@
         var _isDebugAnalytics = location.hostname === 'localhost'
             || location.hostname === '127.0.0.1'
             || location.search.indexOf('debug=1') !== -1;
-        gtag('config', 'G-0GYJLY2BYD', { debug_mode: _isDebugAnalytics });
+        gtag('config', 'G-MVW6S6P1XP', { debug_mode: _isDebugAnalytics });
     </script>
 
     <!-- Web Vitals (Core Web Vitals): tiny CDN module reports LCP/CLS/INP/FCP/TTFB. -->
