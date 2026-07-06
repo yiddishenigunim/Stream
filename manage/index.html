@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="yi" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -26,11 +26,15 @@
         }
 
         body {
-            font-family: 'Outfit', 'Heebo', sans-serif;
+            font-family: 'Heebo', sans-serif;
             background: linear-gradient(135deg, #050c18 0%, #0c182b 50%, #152744 100%);
             min-height: 100vh; color: var(--cream);
             overflow-x: hidden; position: relative;
         }
+
+        /* The file-management chrome stays English / LTR; the replicated
+           main-page view (header + cards + occasions) is Yiddish / RTL. */
+        #manager-view, #progress-panel, .pin-box { direction: ltr; }
 
         /* Glowing background orbs — same as the main page */
         .bg-orbs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
@@ -162,8 +166,14 @@
         .frow:hover { background: rgba(255,255,255,0.045); }
         .frow.selected { background: rgba(212,175,55,0.15); }
         .frow.selected:hover { background: rgba(212,175,55,0.2); }
-        .fcheck { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: var(--navy-dark); flex: 0 0 auto; transition: background 0.15s, border-color 0.15s; }
+        .fcheck { width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: var(--navy-dark); flex: 0 0 auto; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+        .fcheck:hover { border-color: var(--gold); }
         .frow.selected .fcheck { background: var(--gold); border-color: var(--gold); }
+        .fico { width: 18px; flex: 0 0 auto; text-align: center; font-size: 0.72em; color: var(--gold-light); opacity: 0; transition: opacity 0.15s; }
+        .frow:hover .fico { opacity: 0.65; }
+        .frow.playing .fico { opacity: 1; color: var(--gold); }
+        .frow.playing { background: rgba(212,175,55,0.12); }
+        .frow.playing .fname { color: var(--gold-light); font-weight: 600; }
         .fname { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.96em; direction: rtl; text-align: left; }
         .fsize { width: 90px; font-size: 0.82em; opacity: 0.65; }
         .frow-del { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(255,255,255,0.05); color: #ffb3bd; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; opacity: 0; transition: opacity 0.15s, background 0.15s; }
@@ -252,8 +262,8 @@
 
     <div class="container" id="app" hidden>
         <div class="header">
-            <h1>File Manager</h1>
-            <p class="subtitle">Pick a category to add or delete its files</p>
+            <h1>חסידישע ניגונים סטרימינג</h1>
+            <p class="subtitle">פארוואלטונג — קלייבט א קאטעגאריע צו צולייגן אדער מעקן פיילס</p>
         </div>
 
         <!-- Category view — same layout as the main page -->
@@ -261,44 +271,44 @@
             <div class="category-buttons">
                 <button class="category-btn btn-marshn" onclick="openManager('marshn')">
                     <div class="play-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>
-                    <div class="category-label">General<br>Collection</div>
+                    <div class="category-label">אלגעמיינע<br>קאלעקשאן</div>
                 </button>
                 <button class="category-btn btn-lebedik" onclick="openManager('lebedik')">
                     <div class="play-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="9" rx="8" ry="3"/><path d="M4 9v6c0 1.66 3.58 3 8 3s8-1.34 8-3V9"/><path d="m2 2 6 6"/><path d="m22 2-6 6"/></svg></div>
-                    <div class="category-label">Lively<br>Nigunim</div>
+                    <div class="category-label">לעבעדיגע<br>ניגונים</div>
                 </button>
                 <button class="category-btn btn-shteyt" onclick="openManager('shteyt')">
                     <div class="play-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8"/><path d="M10 2h4"/><path d="M12 10c-4 0-6 1.5-6 3 0 1 2 2 2 3s-4 1.5-4 3c0 2 3 3 8 3"/><path d="M12 10c4 0 6 1.5 6 3 0 1-2 2-2 3s4 1.5 4 3c0 2-3 3-8 3"/></svg></div>
-                    <div class="category-label">Stately<br>Nigunim</div>
+                    <div class="category-label">שטאטע<br>ניגונים</div>
                 </button>
                 <button class="category-btn btn-music" onclick="openManager('music')">
                     <div class="play-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg></div>
-                    <div class="category-label">Music<br>Only</div>
+                    <div class="category-label">בלויז<br>מוזיק</div>
                 </button>
                 <button class="category-btn btn-vocali" onclick="openManager('vocali')">
                     <div class="play-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"></rect><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg></div>
-                    <div class="category-label">Vocal</div>
+                    <div class="category-label">וואקאליש</div>
                 </button>
             </div>
 
             <div class="moadim-section">
-                <div class="moadim-title">Occasions</div>
+                <div class="moadim-title">מועדים וזמנים</div>
                 <div class="moadim-buttons moadim-row-1">
-                    <button class="moadim-btn" onclick="openManager('shabbos')">Shabbos</button>
-                    <button class="moadim-btn" onclick="openManager('motzeishabbos')">Motzei Shabbos</button>
-                    <button class="moadim-btn" onclick="openManager('roshchodesh')">Rosh Chodesh</button>
+                    <button class="moadim-btn" onclick="openManager('shabbos')">שבת קודש</button>
+                    <button class="moadim-btn" onclick="openManager('motzeishabbos')">מוצאי שבת</button>
+                    <button class="moadim-btn" onclick="openManager('roshchodesh')">ראש חודש</button>
                 </div>
                 <div class="moadim-buttons moadim-row-2">
-                    <button class="moadim-btn" onclick="openManager('yomimnoroim')">Yomim Noraim</button>
-                    <button class="moadim-btn" onclick="openManager('sukkos')">Sukkos</button>
-                    <button class="moadim-btn" onclick="openManager('chanukah')">Chanukah</button>
-                    <button class="moadim-btn" onclick="openManager('purim')">Purim</button>
+                    <button class="moadim-btn" onclick="openManager('yomimnoroim')">ימים נוראים</button>
+                    <button class="moadim-btn" onclick="openManager('sukkos')">סוכות</button>
+                    <button class="moadim-btn" onclick="openManager('chanukah')">חנוכה</button>
+                    <button class="moadim-btn" onclick="openManager('purim')">פורים</button>
                 </div>
                 <div class="moadim-buttons moadim-row-3">
-                    <button class="moadim-btn" onclick="openManager('pesach')">Pesach</button>
-                    <button class="moadim-btn" onclick="openManager('lagbomer')">Lag BaOmer</button>
-                    <button class="moadim-btn" onclick="openManager('shavuos')">Shavuos</button>
-                    <button class="moadim-btn btn-beinhametzarim" onclick="openManager('beinhametzarim')">Bein HaMetzarim</button>
+                    <button class="moadim-btn" onclick="openManager('pesach')">פסח</button>
+                    <button class="moadim-btn" onclick="openManager('lagbomer')">ל״ג בעומר</button>
+                    <button class="moadim-btn" onclick="openManager('shavuos')">שבועות</button>
+                    <button class="moadim-btn btn-beinhametzarim" onclick="openManager('beinhametzarim')">בין המצרים</button>
                 </div>
             </div>
         </div>
@@ -323,18 +333,6 @@
                 <button class="tool-btn" id="btn-selectall" title="Select all (Ctrl+A)">
                     <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                     Select all <span class="tool-kbd">Ctrl+A</span>
-                </button>
-                <button class="tool-btn" id="btn-copy" disabled title="Copy (Ctrl+C)">
-                    <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    Copy
-                </button>
-                <button class="tool-btn" id="btn-cut" disabled title="Cut (Ctrl+X)">
-                    <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
-                    Cut
-                </button>
-                <button class="tool-btn" id="btn-paste" disabled title="Paste (Ctrl+V)">
-                    <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                    Paste
                 </button>
                 <button class="tool-btn danger" id="btn-delete" disabled title="Delete (Del)">
                     <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -411,10 +409,10 @@
         beinhametzarim: 'מועדים וזמנים/בין המצרים'
     };
     const CATEGORY_LABELS = {
-        marshn: 'General Collection', lebedik: 'Lively Nigunim', shteyt: 'Stately Nigunim',
-        music: 'Music Only', vocali: 'Vocal', shabbos: 'Shabbos', motzeishabbos: 'Motzei Shabbos',
-        roshchodesh: 'Rosh Chodesh', yomimnoroim: 'Yomim Noraim', sukkos: 'Sukkos', chanukah: 'Chanukah',
-        purim: 'Purim', pesach: 'Pesach', lagbomer: 'Lag BaOmer', shavuos: 'Shavuos', beinhametzarim: 'Bein HaMetzarim'
+        marshn: 'אלגעמיינע קאלעקשאן', lebedik: 'לעבעדיגע ניגונים', shteyt: 'שטאטע ניגונים',
+        music: 'בלויז מוזיק', vocali: 'וואקאליש', shabbos: 'שבת קודש', motzeishabbos: 'מוצאי שבת',
+        roshchodesh: 'ראש חודש', yomimnoroim: 'ימים נוראים', sukkos: 'סוכות', chanukah: 'חנוכה',
+        purim: 'פורים', pesach: 'פסח', lagbomer: 'ל״ג בעומר', shavuos: 'שבועות', beinhametzarim: 'בין המצרים'
     };
 
     // ── PIN gate (asked every visit; never stored) ──
@@ -442,7 +440,6 @@
     let folders = [], files = [], filtered = [];
     const selected = new Set();
     let anchorIndex = -1;
-    let clipboard = null;     // { mode:'copy'|'move', keys:[] }
     let busy = false;
 
     const ROW_H = 46, OVERSCAN = 8;
@@ -486,10 +483,12 @@
     window.openManager = openManager;
 
     function backToCategories(){
+        stopPreview();
         $('manager-view').hidden = true;
         $('category-view').hidden = false;
         selected.clear();
     }
+    function stopPreview(){ try { previewAudio.pause(); } catch(_){} playingKey = null; }
 
     // ── Rendering ──
     function renderBreadcrumb(){
@@ -526,8 +525,10 @@
         let html = '';
         for (let i = start; i < end; i++){
             const f = filtered[i], sel = selected.has(f.key);
-            html += `<div class="frow${sel?' selected':''}" style="top:${i*ROW_H}px" data-i="${i}">
-                <span class="fcheck">${sel?'✓':''}</span>
+            const playing = f.key === playingKey && !previewAudio.paused;
+            html += `<div class="frow${sel?' selected':''}${playing?' playing':''}" style="top:${i*ROW_H}px" data-i="${i}">
+                <span class="fcheck" data-check="1" title="Select">${sel?'✓':''}</span>
+                <span class="fico">${playing?'⏸':'▶'}</span>
                 <span class="fname" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
                 <span class="fsize">${fmtSize(f.size)}</span>
                 <button class="frow-del" data-del="1" title="Delete">✕</button>
@@ -541,15 +542,9 @@
     function updateSelBar(){
         const n = selected.size;
         $('btn-delete').disabled = n === 0;
-        $('btn-copy').disabled = n === 0;
-        $('btn-cut').disabled = n === 0;
-        $('btn-paste').disabled = !clipboard || !clipboard.keys.length;
         let html = '';
         if (n > 0) html += `<span class="count">${n} selected</span>`;
         else html += `<span class="muted">${filtered.length} file${filtered.length===1?'':'s'}${filtered.length!==files.length?` (of ${files.length})`:''}</span>`;
-        if (clipboard && clipboard.keys.length){
-            html += `<span class="clip">📋 <b>${clipboard.keys.length}</b> to ${clipboard.mode==='move'?'move':'copy'}</span>`;
-        }
         $('selbar').innerHTML = html;
     }
 
@@ -591,6 +586,7 @@
     }
 
     function navigate(prefix){
+        stopPreview();
         currentPrefix = prefix || categoryRoot;
         selected.clear(); anchorIndex = -1;
         $('search').value = '';
@@ -606,26 +602,41 @@
     function clearSelection(){ selected.clear(); anchorIndex = -1; renderList(); updateSelBar(); }
 
     listEl.addEventListener('click', (e) => {
-        const delBtn = e.target.closest('[data-del]');
-        const row = e.target.closest('.frow');
-        if (delBtn && row){ const f = filtered[+row.dataset.i]; if (f) deleteKeys([f.key]); return; }
-        if (!row) return;
-        const i = +row.dataset.i, key = filtered[i].key;
-        if (e.shiftKey && anchorIndex >= 0){
-            const a = Math.min(i, anchorIndex), b = Math.max(i, anchorIndex);
-            if (!(e.ctrlKey || e.metaKey)) selected.clear();
-            for (let j = a; j <= b; j++) selected.add(filtered[j].key);
-        } else if (e.ctrlKey || e.metaKey){
-            if (selected.has(key)) selected.delete(key); else selected.add(key);
-            anchorIndex = i;
-        } else { selected.clear(); selected.add(key); anchorIndex = i; }
-        renderList(); updateSelBar();
-    });
-    listEl.addEventListener('dblclick', (e) => {
         const row = e.target.closest('.frow'); if (!row) return;
-        const f = filtered[+row.dataset.i]; if (!f) return;
-        window.open(MANAGE_API + '/object?key=' + encodeURIComponent(f.key), '_blank');
+        const i = +row.dataset.i, f = filtered[i];
+        if (e.target.closest('[data-del]')){ deleteKeys([f.key]); return; }
+        // Only the checkbox selects (with shift-range support).
+        if (e.target.closest('[data-check]')){
+            if (e.shiftKey && anchorIndex >= 0){
+                const a = Math.min(i, anchorIndex), b = Math.max(i, anchorIndex);
+                for (let j = a; j <= b; j++) selected.add(filtered[j].key);
+            } else {
+                if (selected.has(f.key)) selected.delete(f.key); else selected.add(f.key);
+                anchorIndex = i;
+            }
+            renderList(); updateSelBar(); return;
+        }
+        // Clicking anywhere else on the row plays / pauses the file.
+        playFile(f);
     });
+
+    // ── Inline preview playback ──
+    let playingKey = null;
+    const previewAudio = new Audio();
+    previewAudio.addEventListener('ended', () => { playingKey = null; renderList(); });
+    previewAudio.addEventListener('pause', () => renderList());
+    previewAudio.addEventListener('play', () => renderList());
+    function playFile(f){
+        if (playingKey === f.key){
+            if (previewAudio.paused) previewAudio.play().catch(()=>{});
+            else previewAudio.pause();
+            return;
+        }
+        playingKey = f.key;
+        previewAudio.src = MANAGE_API + '/object?key=' + encodeURIComponent(f.key);
+        previewAudio.play().catch(()=>{});
+        renderList();
+    }
 
     $('folders').addEventListener('click', (e) => {
         const chip = e.target.closest('[data-prefix]');
@@ -648,21 +659,10 @@
             await refresh();
         } catch(e){ setBusy(false); setError("Couldn't delete: " + e.message); }
     }
-    function copySelection(mode){ if (!selected.size) return; clipboard = { mode, keys: [...selected] }; updateSelBar(); }
-    async function paste(){
-        if (!clipboard || !clipboard.keys.length || busy) return;
-        const ep = clipboard.mode === 'move' ? '/move' : '/copy';
-        setBusy(true, clipboard.mode === 'move' ? 'Moving...' : 'Copying...');
-        try {
-            await api(ep, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from: clipboard.keys, toPrefix: currentPrefix }) });
-            if (clipboard.mode === 'move') clipboard = null;
-            selected.clear();
-            await refresh();
-        } catch(e){ setBusy(false); setError("Couldn't paste: " + e.message); }
-    }
     // ── Uploads — streamed, concurrency-limited, with progress ──
     let _uploadBatch = null;
     const CONCURRENCY = 3;
+    const MAX_UPLOAD_RETRIES = 5;   // ride out transient blocks (e.g. Cloudflare)
     function uploadFiles(fileList){
         const list = [...fileList].filter(f => f.size !== undefined);
         if (!list.length) return;
@@ -681,20 +681,33 @@
             pump();
         });
     }
-    function uploadOne(it){
+    function uploadOne(it, attempt){
+        attempt = attempt || 0;
         return new Promise((resolve) => {
+            const retry = (why) => {
+                if (attempt < MAX_UPLOAD_RETRIES){
+                    // Exponential backoff with jitter — gives a throttling edge
+                    // (Cloudflare Bot Fight Mode, rate limits) time to recover.
+                    const delay = Math.min(15000, 700 * Math.pow(2, attempt)) + Math.random() * 500;
+                    it.status = 'retry'; it.pct = 0; it.err = why; scheduleProgressRender();
+                    setTimeout(() => uploadOne(it, attempt + 1).then(resolve), delay);
+                } else {
+                    it.status = 'error'; it.err = why; _uploadBatch.failed++; scheduleProgressRender(); resolve();
+                }
+            };
             const xhr = new XMLHttpRequest();
             xhr.open('PUT', MANAGE_API + '/object?key=' + encodeURIComponent(it.key));
             xhr.setRequestHeader('Content-Type', it.file.type || 'application/octet-stream');
             it.status = 'uploading';
             xhr.upload.onprogress = (e) => { if (e.lengthComputable){ it.pct = Math.round(e.loaded / e.total * 100); scheduleProgressRender(); } };
             xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300){ it.status = 'done'; it.pct = 100; _uploadBatch.done++; }
-                else { it.status = 'error'; it.err = 'HTTP ' + xhr.status; _uploadBatch.failed++; }
-                scheduleProgressRender(); resolve();
+                if (xhr.status >= 200 && xhr.status < 300){ it.status = 'done'; it.pct = 100; _uploadBatch.done++; scheduleProgressRender(); resolve(); }
+                else if (xhr.status === 429 || xhr.status === 403 || xhr.status >= 500){ retry('HTTP ' + xhr.status); }
+                else { it.status = 'error'; it.err = 'HTTP ' + xhr.status; _uploadBatch.failed++; scheduleProgressRender(); resolve(); }
             };
-            xhr.onerror = () => { it.status = 'error'; it.err = 'network'; _uploadBatch.failed++; scheduleProgressRender(); resolve(); };
-            try { xhr.send(it.file); } catch(e){ it.status = 'error'; it.err = String(e); _uploadBatch.failed++; scheduleProgressRender(); resolve(); }
+            xhr.onerror = () => retry('network');       // CORS-blocked / dropped requests land here
+            xhr.ontimeout = () => retry('timeout');
+            try { xhr.send(it.file); } catch(e){ retry(String(e)); }
         });
     }
     async function finishBatch(){
@@ -711,12 +724,15 @@
         if (!_uploadBatch) return;
         const { items, done, failed } = _uploadBatch;
         $('pp-foot').textContent = `${done + failed}/${items.length}`;
-        const active = items.filter(i => i.status === 'uploading' || i.status === 'queued');
-        const recentDone = items.filter(i => i.status !== 'uploading' && i.status !== 'queued').slice(-40);
-        const show = active.slice(0, 40).concat(recentDone).slice(-60);
+        const inProgress = (s) => s === 'uploading' || s === 'queued' || s === 'retry';
+        const active = items.filter(i => inProgress(i.status));
+        const finished = items.filter(i => !inProgress(i.status)).slice(-40);
+        const show = active.slice(0, 40).concat(finished).slice(-60);
+        const pct = (it) => it.status === 'error' ? (it.err || 'error')
+            : it.status === 'retry' ? '↻ retry' : it.pct + '%';
         $('pp-list').innerHTML = show.map(it => `
             <div class="pp-item ${it.status==='done'?'done':it.status==='error'?'error':''}">
-                <div class="pp-name"><span>${escHtml(it.file.name)}</span><span class="pp-pct">${it.status==='error'?(it.err||'error'):it.pct+'%'}</span></div>
+                <div class="pp-name"><span>${escHtml(it.file.name)}</span><span class="pp-pct">${pct(it)}</span></div>
                 <div class="pp-bar"><div class="pp-fill" style="width:${it.pct}%"></div></div>
             </div>`).join('');
     }
@@ -734,9 +750,6 @@
     $('btn-upload').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => { if (fileInput.files.length) uploadFiles(fileInput.files); fileInput.value = ''; });
     $('btn-selectall').addEventListener('click', toggleSelectAll);
-    $('btn-copy').addEventListener('click', () => copySelection('copy'));
-    $('btn-cut').addEventListener('click', () => copySelection('move'));
-    $('btn-paste').addEventListener('click', paste);
     $('btn-delete').addEventListener('click', () => deleteKeys([...selected]));
     $('btn-refresh').addEventListener('click', refresh);
     $('search').addEventListener('input', () => applyFilter(true));
@@ -752,10 +765,7 @@
         const mod = e.ctrlKey || e.metaKey;
         if (mod && (e.key === 'a' || e.key === 'A')){ if (typing) return; e.preventDefault(); toggleSelectAll(); return; }
         if (typing){ if (e.key === 'Escape') t.blur(); return; }
-        if (mod && (e.key === 'c' || e.key === 'C')){ e.preventDefault(); copySelection('copy'); }
-        else if (mod && (e.key === 'x' || e.key === 'X')){ e.preventDefault(); copySelection('move'); }
-        else if (mod && (e.key === 'v' || e.key === 'V')){ e.preventDefault(); paste(); }
-        else if (e.key === 'Delete' || e.key === 'Backspace'){ if (selected.size){ e.preventDefault(); deleteKeys([...selected]); } }
+        if (e.key === 'Delete' || e.key === 'Backspace'){ if (selected.size){ e.preventDefault(); deleteKeys([...selected]); } }
         else if (e.key === 'Escape'){ if (selected.size) clearSelection(); else backToCategories(); }
         else if (e.key === 'F2' || e.key === '/'){ e.preventDefault(); $('search').focus(); }
     });

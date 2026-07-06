@@ -6,36 +6,44 @@ Nigunim R2 bucket. Reachable at **`https://stream.oitzerhanigunim.org/manage`**
 
 ## What it does
 
-The page looks like the main streaming site: the same category cards and
-Occasions buttons. Clicking a category — instead of playing — opens that
-folder's **files** to manage. The whole UI is in English.
+The landing looks exactly like the main streaming site — same header, category
+cards, and מועדים וזמנים buttons, in Yiddish. Clicking a category — instead of
+playing — opens that folder's **files** to manage. The file-management chrome
+(toolbar, columns, buttons) is in English.
 
-- **Pick a category** (General Collection, Lively/Stately Nigunim, Music Only,
-  Vocal, or any Occasion incl. Bein HaMetzarim) to open its folder.
+- **Pick a category** (any genre card or Occasion, incl. בין המצרים) to open its
+  folder.
 - **Upload** files — click *Upload* or **drag & drop** onto the list. Uploads
-  stream from disk, run 3 at a time, and show per-file progress, so many/large
-  files won't freeze the browser.
-- **Delete** one file (row ✕) or many (select + *Delete*).
-- **Select all**, shift-click ranges, ctrl/⌘-click to toggle.
-- **Copy / Cut / Paste** files between categories/folders (in-app clipboard).
-- **Search/filter**, **double-click** a file to preview/download.
+  stream from disk, run 3 at a time, show per-file progress, and **auto-retry
+  with backoff** so a large batch survives transient throttling.
+- **Click a file to play it** (inline preview); click again to pause.
+- **Select** with the checkbox on the left of each row (shift-click for a
+  range); **Select all** button; **Delete** one (row ✕) or many.
+- **Search/filter** the list.
 - Categories with subfolders (e.g. Vocal → וואכן / שבת) are navigable via
   folder chips + breadcrumb.
 - The file list is **virtualized** — only visible rows render — so it stays
   smooth with thousands of files.
 
-**Files only:** creating and deleting *folders* is intentionally not exposed —
-you can only add and remove files. (The worker still ships `mkdir`/`deletePrefix`
-endpoints, but nothing in the UI calls them.)
+**Files only:** creating/deleting *folders* and copy/cut/paste are intentionally
+not exposed — you can only add, play, and remove files. (The worker still ships
+`mkdir`/`copy`/`move`/`deletePrefix` endpoints, but nothing in the UI calls them.)
+
+### If uploads fail after many files
+
+Cloudflare **Bot Fight Mode** (Security → Bots) treats a burst of browser
+uploads as automated traffic and blocks them *before* they reach the worker —
+the symptom is CORS errors ("No 'Access-Control-Allow-Origin' header") after the
+first several files upload fine. The client now retries automatically, but the
+real fix is to stop Cloudflare from challenging your own admin traffic: turn off
+Bot Fight Mode for the zone, or add a WAF **Skip** rule for
+`stream-api.oitzerhanigunim.org` (or your admin IP).
 
 ### Keyboard shortcuts
 
 | Key | Action |
 | --- | --- |
 | `Ctrl/⌘ + A` | Select all |
-| `Ctrl/⌘ + C` | Copy |
-| `Ctrl/⌘ + X` | Cut |
-| `Ctrl/⌘ + V` | Paste into current folder |
 | `Delete` / `Backspace` | Delete selected |
 | `Esc` | Clear selection, or go back to categories |
 | `/` or `F2` | Focus search |
