@@ -430,10 +430,11 @@
             justify-content: center;
         }
         
-        .moadim-row-1 {
+        .moadim-row-1,
+        .moadim-row-2 {
             margin-bottom: 12px;
         }
-        
+
         .moadim-btn {
             padding: 9px 20px;
             border-radius: 30px;
@@ -463,19 +464,13 @@
                 0 0 20px rgba(212, 175, 55, 0.25);
         }
 
-        /* בין המצרים — brand-new stream, animated hard so it grabs the eye */
-        .moadim-row-new {
-            margin-bottom: 14px;
-        }
-
+        /* בין המצרים — same size as the other stations, but colored and
+           animated so it still stands out as the newest one. */
         .moadim-btn.btn-beinhametzarim {
             position: relative;
             overflow: visible;
-            padding: 11px 32px;
-            font-size: 1.05em;
-            font-weight: 800;
-            letter-spacing: 0.5px;
             color: #fff;
+            font-weight: 700;
             border-color: var(--gold);
             background: linear-gradient(135deg, rgba(212, 175, 55, 0.35), rgba(139, 58, 66, 0.45));
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 16px rgba(212, 175, 55, 0.35);
@@ -492,24 +487,6 @@
             opacity: 0;
             pointer-events: none;
             animation: newStreamRing 1.7s ease-out infinite;
-        }
-
-        /* "נײַ" (new) badge — pseudo-element so it stays out of textContent */
-        .moadim-btn.btn-beinhametzarim::after {
-            content: 'נײַ';
-            position: absolute;
-            top: -11px;
-            inset-inline-start: -10px;
-            background: linear-gradient(135deg, #e63b52, #a0234b);
-            color: #fff;
-            font-size: 0.6em;
-            font-weight: 800;
-            padding: 2px 9px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(230, 59, 82, 0.5);
-            letter-spacing: 0.5px;
-            animation: newBadgeBounce 1.3s ease-in-out infinite;
-            pointer-events: none;
         }
 
         .moadim-btn.btn-beinhametzarim:hover {
@@ -535,16 +512,10 @@
             70%, 100% { transform: scale(1.14); opacity: 0; }
         }
 
-        @keyframes newBadgeBounce {
-            0%, 100% { transform: translateY(0) rotate(-5deg); }
-            50% { transform: translateY(-4px) rotate(5deg); }
-        }
-
         /* Respect users who ask for reduced motion */
         @media (prefers-reduced-motion: reduce) {
             .moadim-btn.btn-beinhametzarim,
-            .moadim-btn.btn-beinhametzarim::before,
-            .moadim-btn.btn-beinhametzarim::after {
+            .moadim-btn.btn-beinhametzarim::before {
                 animation: none;
             }
         }
@@ -1458,9 +1429,6 @@
                 
                 <div class="moadim-section">
                     <div class="moadim-title">מועדים וזמנים</div>
-                    <div class="moadim-buttons moadim-row-new">
-                        <button class="moadim-btn btn-beinhametzarim" id="btn-beinhametzarim" onclick="startPlaying('beinhametzarim')">בין המצרים</button>
-                    </div>
                     <div class="moadim-buttons moadim-row-1">
                         <button class="moadim-btn btn-shabbos" id="btn-shabbos" onclick="startPlaying('shabbos')">שבת קודש</button>
                         <button class="moadim-btn btn-motzeishabbos" id="btn-motzeishabbos" onclick="startPlaying('motzeishabbos')">מוצאי שבת</button>
@@ -1471,9 +1439,12 @@
                         <button class="moadim-btn btn-sukkos" id="btn-sukkos" onclick="startPlaying('sukkos')">סוכות</button>
                         <button class="moadim-btn btn-chanukah" id="btn-chanukah" onclick="startPlaying('chanukah')">חנוכה</button>
                         <button class="moadim-btn btn-purim" id="btn-purim" onclick="startPlaying('purim')">פורים</button>
+                    </div>
+                    <div class="moadim-buttons moadim-row-3">
                         <button class="moadim-btn btn-pesach" id="btn-pesach" onclick="startPlaying('pesach')">פסח</button>
                         <button class="moadim-btn btn-lagbomer" id="btn-lagbomer" onclick="startPlaying('lagbomer')">ל״ג בעומר</button>
                         <button class="moadim-btn btn-shavuos" id="btn-shavuos" onclick="startPlaying('shavuos')">שבועות</button>
+                        <button class="moadim-btn btn-beinhametzarim" id="btn-beinhametzarim" onclick="startPlaying('beinhametzarim')">בין המצרים</button>
                     </div>
                 </div>
             </div>
