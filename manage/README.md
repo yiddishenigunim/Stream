@@ -36,7 +36,7 @@ The page asks for a PIN on **every** visit (never stored). The PIN is set in
 `manage/index.html`:
 
 ```js
-const PIN = 'music@koiolos.org';
+const PIN = 'music@koilos.org';
 ```
 
 ⚠️ **This is convenience, not security.** The PIN is visible to anyone who
@@ -45,36 +45,38 @@ finds its URL. Keep the API URL private. If you want real protection, enable
 the `ADMIN_TOKEN` auth in the worker (see below) and send the token from the
 page.
 
-## Backend — deploy the worker (required)
+## Backend — update the existing worker (required)
 
-The static page **cannot** modify R2 on its own. It talks to a small
-Cloudflare Worker (`manage/worker.js`) that has the R2 bucket bound. This
-worker is **separate** from the public `stream-api`, so deploying it cannot
-break the main site's read-only listing.
+The static page **cannot** modify R2 on its own. The management endpoints live
+in the **existing `nigunim-api` worker** (the same one that serves
+`stream-api.oitzerhanigunim.org`). `manage/worker.js` is that worker with the
+management routes added — the original streaming logic is unchanged.
 
-1. Edit `manage/wrangler.toml` → set `bucket_name` to your real R2 bucket
-   (the same bucket the stream reads from).
-2. From the `manage/` folder:
-   ```sh
-   npx wrangler login      # once
-   npx wrangler deploy
-   ```
-3. Point it at `manage-api.oitzerhanigunim.org` (uncomment the `routes` block
-   in `wrangler.toml`) so the page finds it automatically. **Or** use the
-   printed `*.workers.dev` URL and open the page once as
-   `…/manage?api=https://manage-api.<you>.workers.dev` (it remembers the URL
-   in `localStorage`).
+1. Cloudflare → **Workers & Pages** → **`nigunim-api`** → **Edit code**.
+2. Select all, delete, and **paste the full contents of `manage/worker.js`**.
+3. **Deploy**.
 
-That's it — reload `/manage`, enter the PIN, and you can manage files.
+That's it. The R2 bucket is already bound as `env.BUCKET`, so there's nothing
+else to configure — no new worker, no new domain, no binding changes. The page
+already points at `https://stream-api.oitzerhanigunim.org`.
+
+Reload `/manage`, enter the PIN, and you can manage files.
+
+**Why it's safe:** the management routes (`/list`, `/object`, …) are handled at
+the top of the worker as distinct paths and never touch the existing
+`GET /?folder=` streaming call. They're also handled *before* the 60/min rate
+limiter, so bulk uploads of many files aren't throttled.
 
 ### Optional: real auth
 
+Set a secret token and the worker will require `Authorization: Bearer <token>`
+on all writes:
+
 ```sh
-npx wrangler secret put ADMIN_TOKEN
+npx wrangler secret put ADMIN_TOKEN     # or add it in the dashboard → Settings → Variables
 ```
 
-Then the worker requires `Authorization: Bearer <token>` on all writes. Add a
-matching header in `manage/index.html`'s `api()`/upload calls if you enable it.
+Then add a matching header in `manage/index.html`'s `api()`/upload calls.
 
 ## API contract (for reference)
 
