@@ -6,17 +6,27 @@ Nigunim R2 bucket. Reachable at **`https://stream.oitzerhanigunim.org/manage`**
 
 ## What it does
 
-- **Browse** every folder in the bucket (breadcrumb + folder chips).
-- **Upload** files — click *אַרויפלייגן* or **drag & drop** onto the list.
-  Uploads stream from disk, run 3 at a time, and show per-file progress, so
-  many/large files won't freeze the browser.
-- **Delete** one file (row ✕), many files (select + *אויסמעקן*), or a whole
-  folder (folder chip ✕, recursive).
+The page looks like the main streaming site: the same category cards and
+Occasions buttons. Clicking a category — instead of playing — opens that
+folder's **files** to manage. The whole UI is in English.
+
+- **Pick a category** (General Collection, Lively/Stately Nigunim, Music Only,
+  Vocal, or any Occasion incl. Bein HaMetzarim) to open its folder.
+- **Upload** files — click *Upload* or **drag & drop** onto the list. Uploads
+  stream from disk, run 3 at a time, and show per-file progress, so many/large
+  files won't freeze the browser.
+- **Delete** one file (row ✕) or many (select + *Delete*).
 - **Select all**, shift-click ranges, ctrl/⌘-click to toggle.
-- **Copy / Cut / Paste** files between folders (in-app clipboard).
-- **New folder**, **search/filter**, **double-click** a file to preview/download.
+- **Copy / Cut / Paste** files between categories/folders (in-app clipboard).
+- **Search/filter**, **double-click** a file to preview/download.
+- Categories with subfolders (e.g. Vocal → וואכן / שבת) are navigable via
+  folder chips + breadcrumb.
 - The file list is **virtualized** — only visible rows render — so it stays
   smooth with thousands of files.
+
+**Files only:** creating and deleting *folders* is intentionally not exposed —
+you can only add and remove files. (The worker still ships `mkdir`/`deletePrefix`
+endpoints, but nothing in the UI calls them.)
 
 ### Keyboard shortcuts
 
@@ -27,7 +37,7 @@ Nigunim R2 bucket. Reachable at **`https://stream.oitzerhanigunim.org/manage`**
 | `Ctrl/⌘ + X` | Cut |
 | `Ctrl/⌘ + V` | Paste into current folder |
 | `Delete` / `Backspace` | Delete selected |
-| `Esc` | Clear selection |
+| `Esc` | Clear selection, or go back to categories |
 | `/` or `F2` | Focus search |
 
 ## Access / PIN
