@@ -464,62 +464,6 @@
                 0 0 20px rgba(212, 175, 55, 0.25);
         }
 
-        /* בין המצרים — same size as the other stations, but colored and
-           animated so it still stands out as the newest one. */
-        .moadim-btn.btn-beinhametzarim {
-            position: relative;
-            overflow: visible;
-            color: #fff;
-            font-weight: 700;
-            border-color: var(--gold);
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.35), rgba(139, 58, 66, 0.45));
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 16px rgba(212, 175, 55, 0.35);
-            animation: newStreamPulse 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        /* Expanding halo ring for a stronger "look at me" pulse */
-        .moadim-btn.btn-beinhametzarim::before {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 32px;
-            border: 2px solid var(--gold);
-            opacity: 0;
-            pointer-events: none;
-            animation: newStreamRing 1.7s ease-out infinite;
-        }
-
-        .moadim-btn.btn-beinhametzarim:hover {
-            transform: translateY(-3px) scale(1.04);
-            border-color: var(--gold-light);
-            box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3), 0 0 30px rgba(212, 175, 55, 0.6);
-        }
-
-        /* Glow pulse only (no transform) so :hover lift still works */
-        @keyframes newStreamPulse {
-            0%, 100% {
-                border-color: rgba(212, 175, 55, 0.7);
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 12px rgba(212, 175, 55, 0.3);
-            }
-            50% {
-                border-color: var(--gold-light);
-                box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28), 0 0 34px rgba(212, 175, 55, 0.75);
-            }
-        }
-
-        @keyframes newStreamRing {
-            0% { transform: scale(1); opacity: 0.7; }
-            70%, 100% { transform: scale(1.14); opacity: 0; }
-        }
-
-        /* Respect users who ask for reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-            .moadim-btn.btn-beinhametzarim,
-            .moadim-btn.btn-beinhametzarim::before {
-                animation: none;
-            }
-        }
-        
         .play-icon {
             display: flex;
             align-items: center;
