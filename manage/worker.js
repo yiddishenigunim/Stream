@@ -355,7 +355,150 @@ async function handleManage(path, request, env) {
      shuffle=0    play alphabetically instead of shuffled
    ═══════════════════════════════════════════════════════════════════ */
 
-const STREAM_PATHS = ['/radio', '/playlist.m3u'];
+const STREAM_PATHS = ['/radio', '/playlist.m3u', '/stations'];
+
+/* Friendly station names, so a URL can read ?folder=sfirah instead of eighty
+   characters of percent-encoded Hebrew. Names are matched through
+   normalizeAlias(), which folds case, spaces, quotes, gershayim and Hebrew
+   final-letter forms — so 'ל״ג בעומר', 'lag bomer' and 'lagbaomer' all land
+   on the same folder. Anything not listed here is used as a literal path,
+   so existing folder=<full path> URLs keep working. */
+const STATIONS = [
+  { folder: 'שיינע מארשן', names: [
+    'marshn', 'marshen', 'marshin', 'marshim', 'marsh', 'march', 'marches', 'marchen', 'marschn',
+    'sheinemarshn', 'shainemarshn', 'shaynemarshn', 'sheynemarshn', 'sheynemarshen',
+    'sheinemarches', 'sheine', 'shaine', 'shayne', 'sheyne', 'nice', 'beautiful', 'מארשן', 'מארש',
+    'מארשען', 'מארשין', 'שיינע', 'שיינע מארשן', 'שייני מארשן'] },
+
+  { folder: 'לעבעדיג', names: [
+    'lebedik', 'lebedig', 'lebedick', 'lebbedik', 'lebbedig', 'levedik', 'levedig', 'libedik',
+    'libedig', 'leibedik', 'leybedik', 'laybedik', 'lebidig', 'lebidik', 'lively', 'fast', 'upbeat',
+    'happy', 'dance', 'dancing', 'simcha', 'simche', 'freilich', 'freilech', 'freilach', 'frailich',
+    'freylach', 'freylech', 'fraylich', 'לעבעדיג', 'לעבעדיק', 'לעבידיג', 'לעבידיק', 'פריילעך',
+    'פריילאך', 'פריילעכע', 'שמחה'] },
+
+  { folder: 'שטייטע', names: [
+    'shteyt', 'shteyte', 'shteyteh', 'shteyta', 'shteytig', 'shteytige', 'shteit', 'shteite',
+    'shteiteh', 'shteitig', 'shtayte', 'shtaite', 'shtaiteh', 'shtey', 'shtei', 'shtaytig', 'slow',
+    'slowsongs', 'calm', 'quiet', 'gentle', 'soft', 'ruhig', 'שטייטע', 'שטייט', 'שטייטי', 'שטיטע',
+    'שטייטיגע', 'שטייטעדיג', 'לאנגזאם'] },
+
+  { folder: 'בלויז מוזיק', names: [
+    'music', 'muzik', 'musik', 'muzic', 'miuzik', 'musics', 'onlymusic', 'musiconly', 'justmusic',
+    'bloyzmuzik', 'bloizmuzik', 'blouzmuzik', 'bloyzmusic', 'bloyz', 'bloiz', 'blouz',
+    'instrumental', 'instrumentals', 'instruments', 'novocal', 'novocals', 'novoice', 'nosinging',
+    'background', 'backgroundmusic', 'בלויז מוזיק', 'מוזיק', 'בלויז', 'מיוזיק', 'מוזיקא',
+    'אינסטרומענטאל'] },
+
+  { folder: 'מועדים וזמנים/ספירה/וואכן', names: [
+    'sfirah', 'sfira', 'sfirat', 'sfiras', 'sefirah', 'sefira', 'sefiras', 'sefirat', 'sphira',
+    'sphirah', 'sfiro', 'sefiro', 'sfeirah', 'omer', 'haomer', 'sefirasomer', 'sefiratomer',
+    'sfirasomer', 'counting', 'countingomer', 'vocal', 'vocals', 'vocali', 'vocaly', 'vocaln',
+    'vokal', 'vokals', 'vokali', 'vokaln', 'vokalen', 'vocalen', 'vocalonly', 'acapella',
+    'acappella', 'akapela', 'akapella', 'vochn', 'vokhn', 'vochen', 'vokhen', 'wochn', 'wochen',
+    'voch', 'woch', 'weekday', 'weekdays', 'weekdaysongs', 'ספירה', 'ספירת העומר', 'העומר',
+    'וואקאלן', 'וואקאל', 'וואקאלע', 'וואכן', 'וואך', 'וואכען'] },
+
+  { folder: 'מועדים וזמנים/בין המצרים', names: [
+    'beinhametzarim', 'beinhametzorim', 'beinhametzurim', 'beinhamitzarim', 'beinhamitzorim',
+    'benhametzarim', 'benhamitzarim', 'bainhametzarim', 'baynhametzarim', 'beynhametzarim',
+    'beinhametzarem', 'bienhametzarim', 'binhametzarim', 'bhm', 'bein', 'beyn', 'threeweeks',
+    'threeweek', '3weeks', '3week', 'thethreeweeks', 'drayvochn', 'dreivochn', 'draivochn',
+    'dreiwochen', 'drayvokhn', 'ninedays', '9days', 'tishabav', 'tishabov', 'tishaboov', 'tishaav',
+    'tishabeav', 'בין המצרים', 'המצרים', 'בין', 'דריי וואכן', 'תשעה באב', 'ט באב', 'תשעת הימים'] },
+
+  { folder: 'מועדים וזמנים/ניגוני שבק', names: [
+    'shabbos', 'shabos', 'shabbas', 'shabas', 'shabbes', 'shabbess', 'shabes', 'shabbat', 'shabat',
+    'shabbath', 'shabath', 'sabbath', 'shobbos', 'shobos', 'shabosdike', 'shabbosdik',
+    'niguneishabbos', 'nigunishabbos', 'nigneishabbos', 'shabbosnigunim', 'shabbosniggunim',
+    'shabbossongs', 'shabbostable', 'shabbostish', 'tish', 'שבת', 'שבק', 'ניגוני שבק', 'ניגוני שבת',
+    'שבתדיגע', 'שבתדיג', 'טיש'] },
+
+  { folder: 'מועדים וזמנים/מוצאי שב_ק', names: [
+    'motzeishabbos', 'motzeishabos', 'motzeishabbes', 'motzeishabbat', 'motzeishabat',
+    'motzaishabbos', 'motzaishabos', 'motzoeishabbos', 'motzoishabbos', 'motzeshabbos',
+    'motzashabbos', 'motzash', 'motzei', 'motzai', 'motzoei', 'motzoi', 'moitzei', 'melavemalka',
+    'melavamalka', 'melaveimalka', 'melavehmalka', 'malavemalka', 'havdalah', 'havdala', 'havdole',
+    'saturdaynight', 'מוצאי שבק', 'מוצאי', 'מוצאי שבת', 'מלוה מלכה', 'הבדלה'] },
+
+  { folder: 'מועדים וזמנים/ראש חודש', names: [
+    'roshchodesh', 'roshchoidesh', 'roshchoydesh', 'roshchodsh', 'roschodesch', 'roshchodash',
+    'rausch chodesh', 'rc', 'newmoon', 'newmonth', 'ראש חודש', 'ר״ח', 'ראש חדש'] },
+
+  { folder: 'מועדים וזמנים/ימים נוראים', names: [
+    'yomimnoroim', 'yomimnoraim', 'yomimnorayim', 'yomimnoroyim', 'yomimnaroim', 'yomimnoraiim',
+    'yamimnoraim', 'yamimnoroim', 'yomimnoiroim', 'yomenoraim', 'highholidays', 'highholydays',
+    'highholiday', 'hhd', 'elul', 'ellul', 'elal', 'roshhashana', 'roshhashanah', 'rosheshono',
+    'rosheshone', 'roshashana', 'yomkippur', 'yomkipur', 'yomkipper', 'yomkippurim', 'yonkipper',
+    'selichos', 'slichos', 'selichot', 'slichot', 'teshuva', 'teshuvah', 'tshuva',
+    'aseresyemeiteshuva', 'tishrei', 'tishri', 'ימים נוראים', 'אלול', 'ראש השנה', 'יום כיפור',
+    'יום הכיפורים', 'סליחות', 'תשובה', 'תשרי'] },
+
+  { folder: 'מועדים וזמנים/סוכות', names: [
+    'sukkos', 'sukkot', 'sukos', 'sukot', 'succos', 'succot', 'succoth', 'sukkoth', 'sukkous',
+    'sukas', 'sukkas', 'tabernacles', 'simchastorah', 'simchastoirah', 'simchastora',
+    'simchastoira', 'simchastoyre', 'simchastoyra', 'hoshanarabba', 'hoshanarabbah', 'hoshanarabo',
+    'hoshaanarabba', 'shminiatzeres', 'shminiatzeret', 'shminatzeres', 'ushpizin', 'lulav', 'esrog',
+    'sukkah', 'סוכות', 'סוכה', 'שמחת תורה', 'הושענא רבה', 'שמיני עצרת', 'אושפיזין', 'לולב'] },
+
+  { folder: 'מועדים וזמנים/חנוכה', names: [
+    'chanukah', 'chanuka', 'chanukka', 'chanukkah', 'chanike', 'chanuke', 'chanukeh', 'hanukkah',
+    'hanuka', 'hanukah', 'hanukka', 'hannukah', 'hannuka', 'xanuka', 'chanukas', 'menorah',
+    'menoirah', 'dreidel', 'latkes', 'neiros', 'neros', 'חנוכה', 'חנוכת', 'מנורה', 'נרות', 'סביבון'] },
+
+  { folder: 'מועדים וזמנים/פורים', names: [
+    'purim', 'purem', 'purym', 'poorim', 'pourim', 'purin', 'peurim', 'purimshpiel', 'purimshpil',
+    'shushanpurim', 'megillah', 'megilla', 'megile', 'adar', 'mishloachmanos', 'mishloachmanot',
+    'פורים', 'פורים שפיל', 'שושן פורים', 'מגילה', 'אדר', 'משלוח מנות'] },
+
+  { folder: 'מועדים וזמנים/פסח', names: [
+    'pesach', 'pesah', 'pesakh', 'peysach', 'peisach', 'paysach', 'peysakh', 'pesch', 'peysech',
+    'passover', 'pessach', 'pesachdik', 'seder', 'sedher', 'haggadah', 'hagada', 'hagadah',
+    'matzah', 'matzos', 'matzoh', 'nissan', 'nisan', 'chagamatzos', 'פסח', 'סדר', 'הגדה', 'מצה',
+    'מצות', 'ניסן', 'חג המצות'] },
+
+  { folder: 'מועדים וזמנים/ל_ג בעומר', names: [
+    'lagbomer', 'lagbaomer', 'lagbeomer', 'lagbomeer', 'lagboymer', 'lagboimer', 'lagbaoimer',
+    'lagbaomeer', 'lagbomor', 'lagboomer', 'lagbeoimer', 'lbomer', 'lag', 'rashbi', 'rashby',
+    'reb shimon', 'meron', 'meiron', 'bonfire', 'medura', 'ל״ג בעומר', 'רשב״י', 'מירון', 'מדורה'] },
+
+  { folder: 'מועדים וזמנים/שבועות', names: [
+    'shavuos', 'shavuot', 'shavuoth', 'shavous', 'shavuois', 'shvuos', 'shvuot', 'shvues',
+    'shevuos', 'shevuot', 'shovuos', 'shovuot', 'shvuess', 'shovuous', 'matantorah', 'matantoirah',
+    'matantoyre', 'zmanmatantoraseinu', 'kabbalastorah', 'sivan', 'siven', 'bikkurim', 'akdamus',
+    'shtiferet', 'שבועות', 'מתן תורה', 'סיון', 'ביכורים', 'אקדמות'] },
+];
+
+// Hebrew final letters fold to their base form so a missing/extra final form
+// (וואכן vs וואכנ) still matches.
+const FINAL_FORMS = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+// Yiddish ligatures fold to the letter pairs people actually type.
+const LIGATURES = { 'װ': 'וו', 'ױ': 'וי', 'ײ': 'יי' };
+
+function normalizeAlias(s) {
+  return String(s)
+    .toLowerCase()
+    .replace(/[װ-ײ]/g, (c) => LIGATURES[c] || c)
+    .replace(/[֑-ׇ]/g, '')              // niqqud / cantillation
+    .replace(/[ךםןףץ]/g, (c) => FINAL_FORMS[c] || c)
+    .replace(/[^a-z0-9א-ת]/g, '');      // drop spaces, quotes, slashes, _
+}
+
+const ALIAS_MAP = (() => {
+  const m = new Map();
+  for (const s of STATIONS) {
+    m.set(normalizeAlias(s.folder), s.folder);                 // the full path
+    m.set(normalizeAlias(s.folder.split('/').pop()), s.folder); // just the leaf
+    for (const n of s.names) m.set(normalizeAlias(n), s.folder);
+  }
+  return m;
+})();
+
+// A friendly name if we know it, otherwise the value as given — so both
+// ?folder=sfirah and ?folder=<full R2 path> resolve.
+function resolveFolder(raw) {
+  return ALIAS_MAP.get(normalizeAlias(raw)) || raw;
+}
 
 // Public R2 hostname the web player already streams from (index.html).
 // Used for the M3U so playlist traffic never passes through the worker.
@@ -426,8 +569,25 @@ async function handleStream(path, request, env, ctx) {
   if (!bucket) return new Response('R2 bucket not bound (env.BUCKET)', { status: 500, headers: STREAM_CORS });
 
   const url = new URL(request.url);
-  const folder = url.searchParams.get('folder');
-  if (!folder) return new Response('Missing folder parameter', { status: 400, headers: STREAM_CORS });
+
+  // ── Discovery: what stations exist and what you can call them ──
+  if (path === '/stations') {
+    const origin = url.origin;
+    return mjson({
+      stations: STATIONS.map((s) => ({
+        folder: s.folder,
+        name: s.folder.split('/').pop(),
+        aliases: s.names,
+        radio: `${origin}/radio?folder=${encodeURIComponent(s.names[0])}`,
+        m3u: `${origin}/playlist.m3u?folder=${encodeURIComponent(s.names[0])}`,
+      })),
+    });
+  }
+
+  // `station` reads better in a URL; `folder` is what the site already uses.
+  const requested = url.searchParams.get('station') || url.searchParams.get('folder');
+  if (!requested) return new Response('Missing folder parameter', { status: 400, headers: STREAM_CORS });
+  const folder = resolveFolder(requested);
 
   const wantShuffle = url.searchParams.get('shuffle') !== '0';
 
