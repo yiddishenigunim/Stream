@@ -1,35 +1,44 @@
 # Station URLs
 
-Ready-to-paste URLs for Music Assistant, Sonos, VLC, Home Assistant — one per
-category. See the *Radio endpoints* section of `README.md` for how these work.
+Ready-to-paste URLs for Music Assistant, Sonos, VLC, Home Assistant.
 
-Add `&shuffle=0` to play alphabetically instead of shuffled. Swap `/radio` for
-`/playlist.m3u` to get a skippable playlist instead of a continuous station.
+Every station accepts a **friendly name** instead of the full Hebrew path, so
+the URLs stay short. Names are matched loosely — case, spaces, quotes,
+gershayim and Hebrew final-letter forms are all ignored, and each station has
+many spellings (`sfirah`, `sefira`, `ספירה`, `vocal`, `וואקאלן`, `vochn` … all reach the
+same folder). `?station=` and `?folder=` are interchangeable.
 
-| Station | URL |
-| --- | --- |
-| שיינע מארשן | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%A9%D7%99%D7%99%D7%A0%D7%A2%20%D7%9E%D7%90%D7%A8%D7%A9%D7%9F` |
-| לעבעדיג | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9C%D7%A2%D7%91%D7%A2%D7%93%D7%99%D7%92` |
-| שטייטע | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%A9%D7%98%D7%99%D7%99%D7%98%D7%A2` |
-| בלויז מוזיק | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%91%D7%9C%D7%95%D7%99%D7%96%20%D7%9E%D7%95%D7%96%D7%99%D7%A7` |
-| ספירה / וואכן | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A1%D7%A4%D7%99%D7%A8%D7%94%2F%D7%95%D7%95%D7%90%D7%9B%D7%9F` |
-| בין המצרים | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%91%D7%99%D7%9F%20%D7%94%D7%9E%D7%A6%D7%A8%D7%99%D7%9D` |
-| ניגוני שב״ק | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A0%D7%99%D7%92%D7%95%D7%A0%D7%99%20%D7%A9%D7%91%D7%A7` |
-| מוצאי שב״ק | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%9E%D7%95%D7%A6%D7%90%D7%99%20%D7%A9%D7%91_%D7%A7` |
-| ראש חודש | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A8%D7%90%D7%A9%20%D7%97%D7%95%D7%93%D7%A9` |
-| ימים נוראים | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%99%D7%9E%D7%99%D7%9D%20%D7%A0%D7%95%D7%A8%D7%90%D7%99%D7%9D` |
-| סוכות | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A1%D7%95%D7%9B%D7%95%D7%AA` |
-| חנוכה | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%97%D7%A0%D7%95%D7%9B%D7%94` |
-| פורים | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A4%D7%95%D7%A8%D7%99%D7%9D` |
-| פסח | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A4%D7%A1%D7%97` |
-| ל״ג בעומר | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%9C_%D7%92%20%D7%91%D7%A2%D7%95%D7%9E%D7%A8` |
-| שבועות | `https://stream-api.oitzerhanigunim.org/radio?folder=%D7%9E%D7%95%D7%A2%D7%93%D7%99%D7%9D%20%D7%95%D7%96%D7%9E%D7%A0%D7%99%D7%9D%2F%D7%A9%D7%91%D7%95%D7%A2%D7%95%D7%AA` |
+Add `&shuffle=0` to play alphabetically. Swap `/radio` for `/playlist.m3u` to get a
+skippable playlist instead of a continuous station.
+
+| Station | Stream URL | Also answers to |
+| --- | --- | --- |
+| שיינע מארשן | `https://stream-api.oitzerhanigunim.org/radio?station=marshn` | `marshen`, `marshin`, `marshim`, `marsh`, `march` … |
+| לעבעדיג | `https://stream-api.oitzerhanigunim.org/radio?station=lebedik` | `lebedig`, `lebedick`, `lebbedik`, `lebbedig`, `levedik` … |
+| שטייטע | `https://stream-api.oitzerhanigunim.org/radio?station=shteyt` | `shteyte`, `shteyteh`, `shteyta`, `shteytig`, `shteytige` … |
+| בלויז מוזיק | `https://stream-api.oitzerhanigunim.org/radio?station=music` | `muzik`, `musik`, `muzic`, `miuzik`, `musics` … |
+| ספירה / וואכן | `https://stream-api.oitzerhanigunim.org/radio?station=sfirah` | `sfira`, `sfirat`, `sfiras`, `sefirah`, `sefira` … |
+| בין המצרים | `https://stream-api.oitzerhanigunim.org/radio?station=beinhametzarim` | `beinhametzorim`, `beinhametzurim`, `beinhamitzarim`, `beinhamitzorim`, `benhametzarim` … |
+| ניגוני שב״ק | `https://stream-api.oitzerhanigunim.org/radio?station=shabbos` | `shabos`, `shabbas`, `shabas`, `shabbes`, `shabbess` … |
+| מוצאי שב״ק | `https://stream-api.oitzerhanigunim.org/radio?station=motzeishabbos` | `motzeishabos`, `motzeishabbes`, `motzeishabbat`, `motzeishabat`, `motzaishabbos` … |
+| ראש חודש | `https://stream-api.oitzerhanigunim.org/radio?station=roshchodesh` | `roshchoidesh`, `roshchoydesh`, `roshchodsh`, `roschodesch`, `roshchodash` … |
+| ימים נוראים | `https://stream-api.oitzerhanigunim.org/radio?station=yomimnoroim` | `yomimnoraim`, `yomimnorayim`, `yomimnoroyim`, `yomimnaroim`, `yomimnoraiim` … |
+| סוכות | `https://stream-api.oitzerhanigunim.org/radio?station=sukkos` | `sukkot`, `sukos`, `sukot`, `succos`, `succot` … |
+| חנוכה | `https://stream-api.oitzerhanigunim.org/radio?station=chanukah` | `chanuka`, `chanukka`, `chanukkah`, `chanike`, `chanuke` … |
+| פורים | `https://stream-api.oitzerhanigunim.org/radio?station=purim` | `purem`, `purym`, `poorim`, `pourim`, `purin` … |
+| פסח | `https://stream-api.oitzerhanigunim.org/radio?station=pesach` | `pesah`, `pesakh`, `peysach`, `peisach`, `paysach` … |
+| ל״ג בעומר | `https://stream-api.oitzerhanigunim.org/radio?station=lagbomer` | `lagbaomer`, `lagbeomer`, `lagbomeer`, `lagboymer`, `lagboimer` … |
+| שבועות | `https://stream-api.oitzerhanigunim.org/radio?station=shavuos` | `shavuot`, `shavuoth`, `shavous`, `shavuois`, `shvuos` … |
+
+Full alias list for any station: `GET /stations` returns them all as JSON.
 
 ## Notes
 
 - A station is one fixed folder. The website switches folders by day/time in
-  the browser (`TIME_BASED_FOLDERS`), and that logic does not apply here — add
-  the weekday and שבת folders as two stations if you need both.
-- `folder` matches recursively, so `folder=מועדים וזמנים` (URL-encoded) works as a
+  the browser (`TIME_BASED_FOLDERS`); that does not apply here, so add the
+  weekday and שבת folders as two stations if you need both.
+- Unrecognised values are treated as a literal R2 path, so older
+  `?folder=<full path>` URLs keep working unchanged.
+- `folder` matches recursively, so `?folder=מועדים וזמנים` (URL-encoded) is a
   single station covering every occasion at once.
 - The stream reconnects roughly every 3 hours, between tracks. See README.

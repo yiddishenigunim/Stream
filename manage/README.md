@@ -119,18 +119,40 @@ web stream.
 
 | Method | Path | Returns |
 | --- | --- | --- |
-| `GET` | `/radio?folder=<f>` | endless `audio/mpeg`, tracks concatenated |
-| `GET` | `/playlist.m3u?folder=<f>` | M3U of direct public R2 URLs |
+| `GET` | `/radio?station=<s>` | endless `audio/mpeg`, tracks concatenated |
+| `GET` | `/playlist.m3u?station=<s>` | M3U of direct public R2 URLs |
+| `GET` | `/stations` | JSON: every station, its aliases and URLs |
 
-Both accept `&shuffle=0` to play alphabetically instead of shuffled. `<f>` is
-the same folder string the site uses, URL-encoded — e.g.
-`מועדים וזמנים/בין המצרים`.
+Both accept `&shuffle=0` to play alphabetically instead of shuffled.
+
+### Station names
+
+`<s>` can be a **friendly name** rather than the full Hebrew path, so URLs stay
+readable — `?station=sfirah` instead of eighty characters of percent-encoding.
+`?station=` and `?folder=` are interchangeable.
+
+Matching is deliberately forgiving. Names are folded through `normalizeAlias()`,
+which drops case, spaces, slashes, underscores, quotes, gershayim, niqqud and
+Yiddish ligatures, and normalises Hebrew final-letter forms. Each station also
+carries a long list of spellings, so `sfirah`, `sefira`, `sphirah`, `ספירה`,
+`vocal`, `vokaln`, `וואקאלן`, `וואכן` and `vochn` all reach the same folder.
+`ל״ג בעומר`, `lag bomer` and `lagbaomer` likewise agree.
+
+**Anything unrecognised is used as a literal R2 path**, so pre-existing
+`?folder=<full path>` URLs keep working. See `STATIONS.md` for the table, or
+`GET /stations` for the complete alias list as JSON.
+
+To add a spelling, put it in the relevant `names` array in `STATIONS` — no other
+change is needed. Two stations must never share an alias; the test in the commit
+message for this feature checks that, along with every folder still matching
+`FOLDERS` in `index.html`.
 
 ### Adding a station in Music Assistant
 
-Radio → ⋮ menu (top right) → **ADD ITEM FROM URL** → paste the `/radio` URL,
-give it a name → refresh the Radio list from the same menu. It then plays to
-any speaker Music Assistant controls.
+Radio → ⋮ menu (top right) → **ADD ITEM FROM URL** → paste e.g.
+`https://stream-api.oitzerhanigunim.org/radio?station=lebedik`, give it a name →
+refresh the Radio list from the same menu. It then plays to any speaker Music
+Assistant controls.
 
 Use `/playlist.m3u` instead if you'd rather have the tracks show up as a
 playlist you can skip through; `/radio` is the one that behaves like a station.
