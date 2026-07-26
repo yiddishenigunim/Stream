@@ -20,7 +20,7 @@
  */
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
     const userAgent = request.headers.get('User-Agent') || 'none';
@@ -47,6 +47,17 @@ export default {
     const managePath = url.pathname.replace(/\/+$/, '') || '/';
     if (MANAGE_PATHS.includes(managePath)) {
       return handleManage(managePath, request, env);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    //  Radio API (Music Assistant, Sonos, VLC, …). Also handled here,
+    //  BEFORE the rate limiter and the bot blocker below — this is not
+    //  optional: Music Assistant is Python/aiohttp based, so its
+    //  User-Agent matches the 'python' entry in `blockedBots` and the
+    //  stream would be rejected with a 403 if it fell through.
+    // ───────────────────────────────────────────────────────────────
+    if (STREAM_PATHS.includes(managePath)) {
+      return handleStream(managePath, request, env, ctx);
     }
 
     if (request.method === 'OPTIONS') {
@@ -329,4 +340,168 @@ async function handleManage(path, request, env) {
   } catch (err) {
     return mjson({ error: (err && err.message) || String(err) }, 500);
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Radio API — makes each folder playable as a normal station URL by
+   any external player (Music Assistant, Sonos, VLC, …), which the
+   browser player can't offer because it shuffles files client-side.
+
+     GET /radio?folder=<f>         continuous audio/mpeg stream
+     GET /playlist.m3u?folder=<f>  M3U pointing at the public R2 URLs
+
+   Both are read-only and take the same params:
+     folder=<f>   required, same folder string the web player uses
+     shuffle=0    play alphabetically instead of shuffled
+   ═══════════════════════════════════════════════════════════════════ */
+
+const STREAM_PATHS = ['/radio', '/playlist.m3u'];
+
+// Public R2 hostname the web player already streams from (index.html).
+// Used for the M3U so playlist traffic never passes through the worker.
+const R2_PUBLIC_BASE = 'https://r2.oitzerhanigunim.org';
+
+// Cloudflare caps subrequests per invocation (50 free / 1000 paid) and each
+// track we fetch from R2 spends one. When the budget runs out we simply end
+// the response; players treat that as a dropped station and reconnect, which
+// starts a fresh invocation with a fresh budget. ~45 tracks is roughly three
+// hours of audio, so a reconnect is rare and inaudible between tracks.
+const RADIO_MAX_TRACKS = 45;
+
+const AUDIO_RE = /\.(mp3|wav|ogg|m4a|flac|aac|wma)$/i;
+
+const STREAM_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Range, Icy-MetaData',
+};
+
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// HTTP header values are latin-1, so a Hebrew folder name can't be assigned
+// directly — it throws and the whole response 500s. Emit the UTF-8 bytes as
+// single chars instead: the value is then a legal ByteString, and what goes
+// out on the wire is real UTF-8, so players that decode it show Hebrew.
+function headerSafe(s) {
+  let out = '';
+  for (const b of new TextEncoder().encode(s)) out += String.fromCharCode(b);
+  return out;
+}
+
+// Encode an R2 key for use in a URL while keeping the path separators —
+// the same transform index.html applies when it builds a track URL.
+function keyToUrl(key) {
+  return `${R2_PUBLIC_BASE}/${encodeURIComponent(key).replace(/%2F/g, '/')}`;
+}
+
+// Every audio object under a folder, paged so folders over 1000 files work.
+async function listAudio(bucket, folder) {
+  const prefix = folder.replace(/\/?$/, '/');
+  const out = [];
+  let cursor;
+  do {
+    const res = await bucket.list({ prefix, cursor, limit: 1000 });
+    for (const o of res.objects) {
+      if (AUDIO_RE.test(o.key)) out.push({ key: o.key, name: o.key.split('/').pop() });
+    }
+    cursor = res.truncated ? res.cursor : undefined;
+  } while (cursor);
+  return out;
+}
+
+async function handleStream(path, request, env, ctx) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: STREAM_CORS });
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return new Response('method not allowed', { status: 405, headers: STREAM_CORS });
+  }
+
+  const bucket = env.BUCKET;
+  if (!bucket) return new Response('R2 bucket not bound (env.BUCKET)', { status: 500, headers: STREAM_CORS });
+
+  const url = new URL(request.url);
+  const folder = url.searchParams.get('folder');
+  if (!folder) return new Response('Missing folder parameter', { status: 400, headers: STREAM_CORS });
+
+  const wantShuffle = url.searchParams.get('shuffle') !== '0';
+
+  let tracks;
+  try {
+    tracks = await listAudio(bucket, folder);
+  } catch (err) {
+    return new Response(`R2 list failed: ${(err && err.message) || err}`, { status: 500, headers: STREAM_CORS });
+  }
+  if (!tracks.length) return new Response(`No audio files in folder: ${folder}`, { status: 404, headers: STREAM_CORS });
+
+  const order = wantShuffle ? shuffled(tracks) : tracks.sort((a, b) => a.name.localeCompare(b.name));
+
+  // ── M3U: a plain list of direct R2 URLs ──
+  if (path === '/playlist.m3u') {
+    const lines = ['#EXTM3U'];
+    for (const t of order) {
+      lines.push(`#EXTINF:-1,${t.name.replace(AUDIO_RE, '')}`);
+      lines.push(keyToUrl(t.key));
+    }
+    return new Response(lines.join('\n') + '\n', {
+      headers: {
+        ...STREAM_CORS,
+        'Content-Type': 'audio/x-mpegurl; charset=utf-8',
+        'Content-Disposition': 'inline; filename="station.m3u"',
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+
+  // ── /radio: one endless audio/mpeg body, tracks concatenated ──
+  const headers = {
+    ...STREAM_CORS,
+    'Content-Type': 'audio/mpeg',
+    // No Content-Length: the body is open-ended, which is what tells a
+    // player to treat this as a live station rather than a file download.
+    'Cache-Control': 'no-store, no-transform',
+    'icy-name': headerSafe(folder.split('/').pop() || 'Oitzer HaNigunim'),
+    'icy-description': 'Oitzer HaNigunim',
+  };
+
+  // A HEAD probe (players often send one first) must not spend the budget.
+  if (request.method === 'HEAD') return new Response(null, { headers });
+
+  const { readable, writable } = new IdentityTransformStream();
+
+  const pump = async () => {
+    let played = 0;
+    let queue = order;
+    try {
+      while (played < RADIO_MAX_TRACKS) {
+        for (const t of queue) {
+          if (played >= RADIO_MAX_TRACKS) break;
+          const obj = await bucket.get(t.key);
+          played++;
+          if (!obj || !obj.body) continue;
+          // preventClose keeps the writable open so the next track lands
+          // in the same response body with no gap.
+          await obj.body.pipeTo(writable, { preventClose: true });
+        }
+        // Folder exhausted before the budget was — go round again so a
+        // short folder still behaves like a continuous station.
+        queue = wantShuffle ? shuffled(tracks) : queue;
+      }
+    } catch (err) {
+      // Normal when the listener disconnects mid-track; nothing to do.
+    } finally {
+      try { await writable.close(); } catch (e) { /* already torn down */ }
+    }
+  };
+
+  // Keep the invocation alive for as long as we're feeding the body.
+  if (ctx && ctx.waitUntil) ctx.waitUntil(pump());
+  else pump();
+
+  return new Response(readable, { headers });
 }

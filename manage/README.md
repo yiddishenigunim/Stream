@@ -108,3 +108,45 @@ Then add a matching header in `manage/index.html`'s `api()`/upload calls.
 | `POST` | `/move` | `{ from:[..], toPrefix }` | `{ ok, results }` |
 | `POST` | `/mkdir` | `{ prefix }` | `{ ok, key }` |
 | `POST` | `/deletePrefix` | `{ prefix }` | `{ ok, deleted }` |
+
+## Radio endpoints — playing on external speakers
+
+The website plays audio by fetching a **JSON list** of files and shuffling them
+in JavaScript, so there is no single URL a speaker system can be pointed at.
+These two routes (same worker, same deploy) expose a folder as a normal station
+URL for **Music Assistant, Sonos, VLC, Home Assistant** — anything that plays a
+web stream.
+
+| Method | Path | Returns |
+| --- | --- | --- |
+| `GET` | `/radio?folder=<f>` | endless `audio/mpeg`, tracks concatenated |
+| `GET` | `/playlist.m3u?folder=<f>` | M3U of direct public R2 URLs |
+
+Both accept `&shuffle=0` to play alphabetically instead of shuffled. `<f>` is
+the same folder string the site uses, URL-encoded — e.g.
+`מועדים וזמנים/בין המצרים`.
+
+### Adding a station in Music Assistant
+
+Radio → ⋮ menu (top right) → **ADD ITEM FROM URL** → paste the `/radio` URL,
+give it a name → refresh the Radio list from the same menu. It then plays to
+any speaker Music Assistant controls.
+
+Use `/playlist.m3u` instead if you'd rather have the tracks show up as a
+playlist you can skip through; `/radio` is the one that behaves like a station.
+
+### Notes
+
+- **These routes bypass the bot blocker on purpose.** Music Assistant is
+  Python/aiohttp based, so its User-Agent matches the `python` entry in
+  `blockedBots` — routed normally it would get a 403. They're handled up front
+  with `/list`, `/object`, … for the same reason bulk uploads are.
+- **Reconnects are normal.** Cloudflare caps subrequests per invocation (50
+  free / 1000 paid) and each track spends one, so `/radio` ends the response
+  after `RADIO_MAX_TRACKS` (45 ≈ 3 hours). Players reconnect automatically. On
+  a paid Workers plan you can raise that constant.
+- **Shabbos switching is not applied.** The site swaps folders by day/time in
+  the browser (`TIME_BASED_FOLDERS`); a radio URL is a fixed folder. Add the
+  weekday and שבת folders as two stations if that matters.
+- `/playlist.m3u` costs no worker bandwidth — it points at the public R2
+  hostname the site already streams from.
