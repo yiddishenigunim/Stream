@@ -513,6 +513,51 @@ const RADIO_MAX_TRACKS = 45;
 
 const AUDIO_RE = /\.(mp3|wav|ogg|m4a|flac|aac|wma)$/i;
 
+/* Pace the stream to roughly real time.
+
+   Without this the worker writes each track as fast as the socket accepts it.
+   Measured against the deployed endpoint that was ~945x real time: the entire
+   45-track budget left in 12 seconds, so a client that buffers rather than
+   applying backpressure got 12 seconds of connection and then EOF, and one
+   listener cost a whole playlist of R2 egress.
+
+   We keep LEAD_SECONDS of audio queued ahead of the play position so players
+   start instantly and never starve, then sleep to hold that lead. */
+const LEAD_SECONDS = 20;
+// Used until a frame header is read. 320 kbps is the MP3 ceiling, so assuming
+// it can only ever make us send early (more buffer), never late (a stall).
+const DEFAULT_BYTES_PER_SEC = 320000 / 8;
+
+const BITRATES_V1L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+const BITRATES_V2L3 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0];
+
+// Total size of a leading ID3v2 tag, or 0. Worth skipping rather than sending:
+// the tag carries embedded album art, which can run to hundreds of KB per file
+// and is pure waste in a stream nothing will read it from.
+function id3TagSize(b) {
+  if (b.length < 10 || b[0] !== 0x49 || b[1] !== 0x44 || b[2] !== 0x33) return 0;
+  // Size is 4 syncsafe bytes (7 significant bits each), excluding the header.
+  const size = (b[6] & 0x7f) << 21 | (b[7] & 0x7f) << 14 | (b[8] & 0x7f) << 7 | (b[9] & 0x7f);
+  const hasFooter = (b[5] & 0x10) !== 0;
+  return 10 + size + (hasFooter ? 10 : 0);
+}
+
+// Bytes/sec from the first MP3 frame header found, or 0 if none is recognised.
+function sniffBytesPerSec(b) {
+  const limit = Math.min(b.length - 4, 4096);
+  for (let i = 0; i < limit; i++) {
+    if (b[i] !== 0xff || (b[i + 1] & 0xe0) !== 0xe0) continue;
+    const version = (b[i + 1] >> 3) & 0x03;   // 3=MPEG1, 2=MPEG2, 0=MPEG2.5
+    const layer = (b[i + 1] >> 1) & 0x03;     // 1=Layer III
+    if (version === 1 || layer !== 1) continue;
+    const kbps = (version === 3 ? BITRATES_V1L3 : BITRATES_V2L3)[(b[i + 2] >> 4) & 0x0f];
+    if (kbps) return (kbps * 1000) / 8;
+  }
+  return 0;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const STREAM_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -635,6 +680,10 @@ async function handleStream(path, request, env, ctx) {
   const { readable, writable } = new IdentityTransformStream();
 
   const pump = async () => {
+    const writer = writable.getWriter();
+    const startedAt = Date.now();
+    let queuedSeconds = 0;   // audio duration written so far
+    let bytesPerSec = DEFAULT_BYTES_PER_SEC;
     let played = 0;
     let queue = order;
     try {
@@ -644,9 +693,35 @@ async function handleStream(path, request, env, ctx) {
           const obj = await bucket.get(t.key);
           played++;
           if (!obj || !obj.body) continue;
-          // preventClose keeps the writable open so the next track lands
-          // in the same response body with no gap.
-          await obj.body.pipeTo(writable, { preventClose: true });
+
+          const reader = obj.body.getReader();
+          let skip = -1;      // -1 until the ID3 header has been inspected
+          let sniffed = false;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            let buf = value;
+
+            if (skip === -1) skip = id3TagSize(buf);
+            if (skip > 0) {
+              // The tag can be larger than one chunk, so drop across reads.
+              const drop = Math.min(skip, buf.length);
+              skip -= drop;
+              buf = buf.subarray(drop);
+              if (!buf.length) continue;
+            }
+            if (!sniffed) {
+              bytesPerSec = sniffBytesPerSec(buf) || bytesPerSec;
+              sniffed = true;
+            }
+
+            await writer.write(buf);
+            // Track duration, not bytes — bitrate varies between tracks.
+            queuedSeconds += buf.length / bytesPerSec;
+
+            const aheadMs = queuedSeconds * 1000 - (Date.now() - startedAt) - LEAD_SECONDS * 1000;
+            if (aheadMs > 0) await sleep(Math.min(aheadMs, 30000));
+          }
         }
         // Folder exhausted before the budget was — go round again so a
         // short folder still behaves like a continuous station.
@@ -655,7 +730,7 @@ async function handleStream(path, request, env, ctx) {
     } catch (err) {
       // Normal when the listener disconnects mid-track; nothing to do.
     } finally {
-      try { await writable.close(); } catch (e) { /* already torn down */ }
+      try { await writer.close(); } catch (e) { /* already torn down */ }
     }
   };
 
