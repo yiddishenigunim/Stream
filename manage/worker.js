@@ -523,7 +523,26 @@ const AUDIO_RE = /\.(mp3|wav|ogg|m4a|flac|aac|wma)$/i;
 
    We keep LEAD_SECONDS of audio queued ahead of the play position so players
    start instantly and never starve, then sleep to hold that lead. */
-const LEAD_SECONDS = 20;
+const LEAD_SECONDS = 15;
+
+/* Write granularity once paced.
+
+   R2 hands back large chunks. Writing a whole one and then sleeping for its
+   full duration means a 64 KB chunk — four seconds of audio at 128 kbps —
+   leaves as an instant burst followed by four seconds of silence on the wire.
+   A player with a large buffer rides that out; a telephony decoder with a
+   small jitter buffer underruns between bursts and clicks once per burst.
+   Slicing to a quarter second makes delivery smooth instead of bursty. */
+const CHUNK_SECONDS = 0.25;
+
+/* Send this much faster than the measured bitrate.
+
+   The rate comes from each track's first frame header, which is exact for CBR
+   but understates a VBR file whose later frames are denser. Pacing to an
+   understated rate starves the player, which sounds like the same stuttering
+   the burstiness causes. A margin makes underrun impossible at the cost of a
+   slightly deeper buffer. */
+const PACE_MARGIN = 1.25;
 // Used until a frame header is read. 320 kbps is the MP3 ceiling, so assuming
 // it can only ever make us send early (more buffer), never late (a stall).
 const DEFAULT_BYTES_PER_SEC = 320000 / 8;
@@ -557,6 +576,13 @@ function sniffBytesPerSec(b) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function concat(a, b) {
+  const out = new Uint8Array(a.length + b.length);
+  out.set(a, 0);
+  out.set(b, a.length);
+  return out;
+}
 
 const STREAM_CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -695,8 +721,26 @@ async function handleStream(path, request, env, ctx) {
           if (!obj || !obj.body) continue;
 
           const reader = obj.body.getReader();
-          let skip = -1;      // -1 until the ID3 header has been inspected
+          let skip = -1;      // -1 until the ID3v2 header has been inspected
           let sniffed = false;
+          // Holds back the final 128 bytes of the track so a trailing ID3v1
+          // tag can be dropped instead of played. It is literal "TAG" plus
+          // text, and decoders render it as a click at every track change.
+          let tail = new Uint8Array(0);
+
+          const paceOut = async (data) => {
+            const slice = Math.max(1024, Math.floor(bytesPerSec * CHUNK_SECONDS));
+            for (let off = 0; off < data.length; off += slice) {
+              const piece = data.subarray(off, off + slice);
+              await writer.write(piece);
+              // A pacing clock, not real duration: PACE_MARGIN deliberately
+              // makes it run short so we stay ahead of the decoder.
+              queuedSeconds += piece.length / (bytesPerSec * PACE_MARGIN);
+              const aheadMs = queuedSeconds * 1000 - (Date.now() - startedAt) - LEAD_SECONDS * 1000;
+              if (aheadMs > 0) await sleep(Math.min(aheadMs, 30000));
+            }
+          };
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -710,17 +754,23 @@ async function handleStream(path, request, env, ctx) {
               buf = buf.subarray(drop);
               if (!buf.length) continue;
             }
-            if (!sniffed) {
+            if (!sniffed && buf.length >= 4) {
               bytesPerSec = sniffBytesPerSec(buf) || bytesPerSec;
               sniffed = true;
             }
 
-            await writer.write(buf);
-            // Track duration, not bytes — bitrate varies between tracks.
-            queuedSeconds += buf.length / bytesPerSec;
-
-            const aheadMs = queuedSeconds * 1000 - (Date.now() - startedAt) - LEAD_SECONDS * 1000;
-            if (aheadMs > 0) await sleep(Math.min(aheadMs, 30000));
+            // Emit everything except the last 128 bytes seen so far.
+            const merged = tail.length ? concat(tail, buf) : buf;
+            if (merged.length > 128) {
+              await paceOut(merged.subarray(0, merged.length - 128));
+              tail = merged.slice(merged.length - 128);
+            } else {
+              tail = merged.slice();
+            }
+          }
+          // Whatever is left is audio unless it is an ID3v1 tag.
+          if (!(tail.length === 128 && tail[0] === 0x54 && tail[1] === 0x41 && tail[2] === 0x47)) {
+            await paceOut(tail);
           }
         }
         // Folder exhausted before the budget was — go round again so a
