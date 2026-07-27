@@ -1,14 +1,42 @@
+// Cloudflare Workers Builds deploys this Worker on every push to main.
+//
+// This is the ONLY config file, on purpose. Wrangler prefers wrangler.jsonc
+// over wrangler.toml, so keeping both means the .toml is silently ignored —
+// which is how stream-api ended up serving the website instead of the API.
+// Cloudflare's autoconfig generated a wrangler.jsonc containing "assets" and
+// no "main", which turns the Worker into a static file server for the repo
+// root: every API route 404s, and the site's own /?folder= call gets
+// index.html back instead of its song list. Do not reintroduce an "assets"
+// block, and do not add a second config file alongside this one.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "nigunim-api",
-  "compatibility_date": "2026-07-27",
+
+  // The Worker itself. With no "main" there is no script to run at all.
+  "main": "manage/worker.js",
+
+  "compatibility_date": "2025-01-01",
+
+  // The *.workers.dev URL stays enabled.
+  "workers_dev": true,
+
+  // Both hostnames the Worker already answers on. stream-api is the one the
+  // website and /manage call, so losing it takes the site down with it.
+  "routes": [
+    { "pattern": "stream-api.oitzerhanigunim.org", "custom_domain": true },
+    { "pattern": "nigunim-api.oitzerhanigunim.org", "custom_domain": true }
+  ],
+
+  // The bucket holding every nigun, read as env.BUCKET in manage/worker.js.
+  // "binding" is the name the code uses; "bucket_name" is the real bucket.
+  // A deploy missing this block leaves env.BUCKET undefined and every route
+  // fails, while the deploy itself still reports success.
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "stream" }
+  ],
+
+  // Keeps the per-request log lines in manage/worker.js queryable.
   "observability": {
     "enabled": true
-  },
-  "assets": {
-    "directory": "."
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  }
 }
