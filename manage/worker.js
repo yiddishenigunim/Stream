@@ -375,13 +375,15 @@ const STATIONS = [
     'libedig', 'leibedik', 'leybedik', 'laybedik', 'lebidig', 'lebidik', 'lively', 'fast', 'upbeat',
     'happy', 'dance', 'dancing', 'simcha', 'simche', 'freilich', 'freilech', 'freilach', 'frailich',
     'freylach', 'freylech', 'fraylich', 'לעבעדיג', 'לעבעדיק', 'לעבידיג', 'לעבידיק', 'פריילעך',
-    'פריילאך', 'פריילעכע', 'שמחה'] },
+    'פריילאך', 'פריילעכע', 'שמחה', 'lebedigenigunim', 'lebedikenigunim', 'lebedigeniggunim',
+    'lebedignigunim', 'lebedige', 'לעבעדיגע ניגונים', 'לעבעדיגע', 'לעבעדיגע נגונים'] },
 
   { folder: 'שטייטע', names: [
     'shteyt', 'shteyte', 'shteyteh', 'shteyta', 'shteytig', 'shteytige', 'shteit', 'shteite',
     'shteiteh', 'shteitig', 'shtayte', 'shtaite', 'shtaiteh', 'shtey', 'shtei', 'shtaytig', 'slow',
     'slowsongs', 'calm', 'quiet', 'gentle', 'soft', 'ruhig', 'שטייטע', 'שטייט', 'שטייטי', 'שטיטע',
-    'שטייטיגע', 'שטייטעדיג', 'לאנגזאם'] },
+    'שטייטיגע', 'שטייטעדיג', 'לאנגזאם', 'shteytenigunim', 'shteitenigunim', 'shteytnigunim',
+    'shtaytenigunim', 'שטייטע ניגונים', 'שטייטע נגונים'] },
 
   { folder: 'בלויז מוזיק', names: [
     'music', 'muzik', 'musik', 'muzic', 'miuzik', 'musics', 'onlymusic', 'musiconly', 'justmusic',
@@ -397,7 +399,8 @@ const STATIONS = [
     'vokal', 'vokals', 'vokali', 'vokaln', 'vokalen', 'vocalen', 'vocalonly', 'acapella',
     'acappella', 'akapela', 'akapella', 'vochn', 'vokhn', 'vochen', 'vokhen', 'wochn', 'wochen',
     'voch', 'woch', 'weekday', 'weekdays', 'weekdaysongs', 'ספירה', 'ספירת העומר', 'העומר',
-    'וואקאלן', 'וואקאל', 'וואקאלע', 'וואכן', 'וואך', 'וואכען'] },
+    'וואקאלן', 'וואקאל', 'וואקאלע', 'וואכן', 'וואך', 'וואכען', 'vokalish', 'vocalish', 'vokalisch',
+    'vocalisch', 'vokolish', 'vokalis', 'vocalis', 'וואקאליש', 'וואקאליסט', 'א קאפעלא'] },
 
   { folder: 'מועדים וזמנים/בין המצרים', names: [
     'beinhametzarim', 'beinhametzorim', 'beinhametzurim', 'beinhamitzarim', 'beinhamitzorim',
