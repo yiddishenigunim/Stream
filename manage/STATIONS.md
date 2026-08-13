@@ -11,6 +11,9 @@ same folder). `?station=` and `?folder=` are interchangeable.
 Add `&shuffle=0` to play alphabetically. Swap `/radio` for `/playlist.m3u` to get a
 skippable playlist instead of a continuous station.
 
+Add `&gain=4.5` to play louder — see [Turning it up](#turning-it-up) below. It is
+what the telephone hotline URLs want; speakers generally don't need it.
+
 | Station | Stream URL | Also answers to |
 | --- | --- | --- |
 | שיינע מארשן | `https://stream-api.oitzerhanigunim.org/radio?station=marshn` | `marshen`, `marshin`, `marshim`, `marsh`, `march` … |
@@ -31,6 +34,35 @@ skippable playlist instead of a continuous station.
 | שבועות | `https://stream-api.oitzerhanigunim.org/radio?station=shavuos` | `shavuot`, `shavuoth`, `shavous`, `shavuois`, `shvuos` … |
 
 Full alias list for any station: `GET /stations` returns them all as JSON.
+
+## Turning it up
+
+The library sits around **-18 dBFS RMS**. That is comfortable on speakers and
+noticeably quiet on a telephone hotline, which expects a hotter signal and then
+attenuates and band-limits it further. `&gain=<dB>` on a `/radio` URL raises it:
+
+```
+https://stream-api.oitzerhanigunim.org/radio?station=lebedik&gain=4.5
+```
+
+| `gain` | Effect | Measured on five library tracks |
+| --- | --- | --- |
+| `3` | Safe everywhere | no clipping on 4 of 5; 0.004% of samples on the hottest |
+| `4.5` | **Recommended for the hotline** | worst case 0.03% of samples reach full scale |
+| `6` | Loud; audible on transients | worst case 0.15% of samples |
+| `9`+ | Too much | 1%+ of samples clipped — don't |
+
+Notes:
+
+- Values are rounded to **1.5 dB steps** (the MP3 gain field's granularity) and
+  capped at **±12 dB**. The response header `x-gain-db` says what was actually
+  applied, so `?gain=99` reports `12`.
+- Negative values work too — `&gain=-3` for a quieter feed.
+- It is **lossless**: nothing is decoded or re-encoded, so there is no quality
+  cost. The one risk is clipping, since the tracks' own peaks run from -0.6 to
+  -7.8 dBFS. That is why it is per-URL rather than on for everyone.
+- `/playlist.m3u` ignores `gain` — it hands out direct R2 file URLs, which the
+  worker never touches.
 
 ## Notes
 
