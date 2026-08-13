@@ -123,7 +123,8 @@ web stream.
 | `GET` | `/playlist.m3u?station=<s>` | M3U of direct public R2 URLs |
 | `GET` | `/stations` | JSON: every station, its aliases and URLs |
 
-Both accept `&shuffle=0` to play alphabetically instead of shuffled.
+Both accept `&shuffle=0` to play alphabetically instead of shuffled. `/radio`
+also accepts `&gain=<dB>` — see [Loudness](#loudness) below.
 
 ### Station names
 
@@ -146,6 +147,36 @@ To add a spelling, put it in the relevant `names` array in `STATIONS` — no oth
 change is needed. Two stations must never share an alias; the test in the commit
 message for this feature checks that, along with every folder still matching
 `FOLDERS` in `index.html`.
+
+### Loudness
+
+`GET /radio?station=<s>&gain=<dB>` plays louder. The library averages about
+-18 dBFS RMS — fine on speakers, quiet on a telephone hotline, which wants a
+hotter feed and then attenuates and band-limits it.
+
+**`&gain=4.5` is the recommended setting for hotline URLs.** Speakers and Music
+Assistant generally don't need it. `STATIONS.md` has the measured table.
+
+How it works: every MP3 frame carries a `global_gain` field per granule per
+channel — an 8-bit exponent on the requantiser, worth 1.5 dB a step. The worker
+rewrites those fields as the bytes go past. Nothing is decoded or re-encoded, so
+there is **no quality cost**, and no byte moves: the field lives in the frame's
+own side information, not in the bit reservoir that main data is spread across.
+It is the same edit `mp3gain` makes to files on disk. Frames carrying a CRC get
+it recomputed; the Xing/Info header frame is left alone so its LAME checksum —
+and with it gapless trimming — survives.
+
+Two limits:
+
+- Requested dB is rounded to whole 1.5 dB steps and capped at ±12. The response
+  header `x-gain-db` reports what was actually applied.
+- Loud tracks clip. Peaks across the library run -0.6 to -7.8 dBFS, so a big
+  boost flat-tops the hottest ones. At 4.5 dB the worst case measured was 0.03%
+  of samples; by 9 dB it is over 1%. This is why gain is per-URL and capped
+  rather than applied to every listener.
+
+`/playlist.m3u` ignores `gain` — it points at direct R2 URLs the worker never
+sees.
 
 ### Adding a station in Music Assistant
 

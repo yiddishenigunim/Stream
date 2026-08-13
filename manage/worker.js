@@ -353,6 +353,7 @@ async function handleManage(path, request, env) {
    Both are read-only and take the same params:
      folder=<f>   required, same folder string the web player uses
      shuffle=0    play alphabetically instead of shuffled
+     gain=<dB>    /radio only — play louder (see "Loudness" below)
    ═══════════════════════════════════════════════════════════════════ */
 
 const STREAM_PATHS = ['/radio', '/playlist.m3u', '/stations'];
@@ -578,6 +579,226 @@ function sniffBytesPerSec(b) {
   return 0;
 }
 
+/* ── Loudness (`?gain=<dB>`) ───────────────────────────────────────────
+
+   The library sits around -18 dBFS RMS. That is fine on speakers and too
+   quiet on a telephone hotline, which expects a hotter signal and then
+   band-limits and attenuates it further.
+
+   We can't re-encode — there is no decoder in a Worker, and re-encoding
+   would cost a generation of quality anyway. We don't have to. Every MP3
+   frame carries a `global_gain` field per granule per channel in its side
+   information: an 8-bit exponent on the requantiser, 1.5 dB per step.
+   Raising it makes the decoder reconstruct the same coefficients louder.
+   That is a byte-for-byte edit of the side info, nothing is re-coded, and
+   it is exactly what mp3gain does to files on disk.
+
+   Why the edit is safe mid-stream: MP3's bit reservoir means a frame's
+   *main data* may live in earlier frames, so you cannot move bytes around.
+   The side info is different — it is always in its own frame, immediately
+   after the header, at a fixed bit offset. Rewriting it in place changes
+   no length and shifts nothing.
+
+   Two limits worth knowing:
+     - `global_gain` saturates at 255. Measured across the library it sits
+       near 180 (p99 186), so there are ~45 steps of headroom and clamping
+       effectively never fires; we count it anyway.
+     - Loud tracks can clip. Peaks in the library run from -0.6 to -7.8
+       dBFS, so a boost past the quietest headroom will flat-top peaks on
+       the hottest tracks. That is why this is opt-in per URL rather than
+       applied to every listener, and why it is capped.  */
+
+const GAIN_DB_PER_STEP = 1.5;   // one global_gain step, per the MP3 spec
+const GAIN_MAX_DB = 12;
+
+const SAMPLE_RATES = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] };
+
+// Requested dB → whole global_gain steps. Anything unparseable means 0,
+// i.e. pass the bytes through untouched.
+function gainSteps(raw) {
+  if (raw === null || raw === undefined || raw === '') return 0;
+  const db = Number(raw);
+  if (!Number.isFinite(db)) return 0;
+  return Math.round(Math.max(-GAIN_MAX_DB, Math.min(GAIN_MAX_DB, db)) / GAIN_DB_PER_STEP);
+}
+
+/* Decode a frame header at `i`, or null if it isn't one. Rejects the
+   reserved encodings as well as free-format and out-of-range indexes, so a
+   0xFF byte inside audio data is very unlikely to be taken for a header —
+   and once we're aligned we step frame to frame and never re-scan. */
+function parseFrameHeader(b, i) {
+  if (i + 4 > b.length || b[i] !== 0xff || (b[i + 1] & 0xe0) !== 0xe0) return null;
+  const version = (b[i + 1] >> 3) & 0x03;   // 3=MPEG1, 2=MPEG2, 0=MPEG2.5, 1=reserved
+  const layer = (b[i + 1] >> 1) & 0x03;     // 1 = Layer III
+  const bitrateIdx = (b[i + 2] >> 4) & 0x0f;
+  const rateIdx = (b[i + 2] >> 2) & 0x03;
+  if (version === 1 || layer !== 1 || bitrateIdx === 0 || bitrateIdx === 15 || rateIdx === 3) return null;
+  const lsf = version !== 3;               // MPEG2/2.5 = "lower sampling frequency"
+  const kbps = (lsf ? BITRATES_V2L3 : BITRATES_V1L3)[bitrateIdx];
+  const length = Math.floor((lsf ? 72000 : 144000) * kbps / SAMPLE_RATES[version][rateIdx])
+    + ((b[i + 2] >> 1) & 0x01);            // padding byte
+  return {
+    length,
+    lsf,
+    hasCrc: (b[i + 1] & 0x01) === 0,       // the bit is set when there is NO CRC
+    channels: ((b[i + 3] >> 6) & 0x03) === 3 ? 1 : 2,
+  };
+}
+
+// An 8-bit field at an arbitrary bit offset spans two bytes.
+function readByteAtBit(b, base, bit) {
+  const at = base + (bit >> 3), shift = bit & 7;
+  return (((b[at] << 8) | b[at + 1]) >> (8 - shift)) & 0xff;
+}
+
+function writeByteAtBit(b, base, bit, value) {
+  const at = base + (bit >> 3), shift = bit & 7;
+  const word = ((b[at] << 8) | b[at + 1]) & 0xffff;
+  const mask = (0xff << (8 - shift)) & 0xffff;
+  const out = (word & ~mask) | ((value << (8 - shift)) & mask);
+  b[at] = (out >> 8) & 0xff;
+  b[at + 1] = out & 0xff;
+}
+
+// MPEG audio CRC-16: poly 0x8005, init 0xFFFF, over header bytes 2-3 plus
+// the side info. Only frames that carry a CRC need it, but those frames are
+// dropped by strict decoders if we edit the side info and leave it stale.
+function sideInfoCrc(b, off, sideStart, sideLen) {
+  let crc = 0xffff;
+  const feed = (byte) => {
+    crc ^= byte << 8;
+    for (let n = 0; n < 8; n++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x8005) & 0xffff : (crc << 1) & 0xffff;
+  };
+  feed(b[off + 2]);
+  feed(b[off + 3]);
+  for (let n = 0; n < sideLen; n++) feed(b[sideStart + n]);
+  return crc;
+}
+
+// Side info is fixed-size per version and channel count.
+function sideInfoLen(hdr) {
+  return hdr.lsf ? (hdr.channels === 1 ? 9 : 17) : (hdr.channels === 1 ? 17 : 32);
+}
+
+/* True for the silent Xing/Info/VBRI frame most VBR files open with.
+
+   It carries the stream length and, from LAME, a checksum over the frame's
+   own first 190 bytes — which covers the side info. Shifting a gain there
+   invalidates that checksum, decoders then discard the whole tag, and with
+   it the gapless-playback trim: mpg123 decoded 3311 extra samples of
+   encoder padding per track before this was skipped. The frame holds no
+   audio, so skipping it costs nothing. */
+function isTagFrame(b, off, hdr) {
+  const at = (p, s) => {
+    if (p + 4 > b.length) return false;
+    for (let n = 0; n < 4; n++) if (b[p + n] !== s.charCodeAt(n)) return false;
+    return true;
+  };
+  const afterSide = off + 4 + (hdr.hasCrc ? 2 : 0) + sideInfoLen(hdr);
+  return at(afterSide, 'Xing') || at(afterSide, 'Info') || at(off + 36, 'VBRI');
+}
+
+/* Shift every global_gain in one frame, in place.
+
+   Side info layout, from its first byte:
+     MPEG1   main_data_begin 9 + private (5 mono / 3 else) + scfsi 4·channels,
+             then 2 granules × channels blocks of 59 bits
+     MPEG2/5 main_data_begin 8 + private (1 mono / 2 else),
+             then 1 granule × channels blocks of 63 bits
+   global_gain sits 21 bits into each block, after part2_3_length (12) and
+   big_values (9). Those add up to the spec's side info sizes (17/32 and
+   9/17 bytes), which is the arithmetic check that the offsets are right. */
+function shiftFrameGain(b, off, hdr, steps, stats) {
+  const sideStart = off + 4 + (hdr.hasCrc ? 2 : 0);
+  const sideLen = sideInfoLen(hdr);
+  if (sideStart + sideLen > b.length) return;   // truncated frame: leave it alone
+  if (isTagFrame(b, off, hdr)) { stats.skipped++; return; }
+
+  const base = hdr.lsf
+    ? 8 + (hdr.channels === 1 ? 1 : 2)
+    : 9 + (hdr.channels === 1 ? 5 : 3) + 4 * hdr.channels;
+  const blockBits = hdr.lsf ? 63 : 59;
+  const blocks = (hdr.lsf ? 1 : 2) * hdr.channels;
+
+  for (let n = 0; n < blocks; n++) {
+    const bit = base + n * blockBits + 21;
+    const was = readByteAtBit(b, sideStart, bit);
+    const now = Math.max(0, Math.min(255, was + steps));
+    if (now !== was + steps) stats.clamped++;
+    if (now !== was) writeByteAtBit(b, sideStart, bit, now);
+  }
+  stats.frames++;
+
+  if (hdr.hasCrc) {
+    const crc = sideInfoCrc(b, off, sideStart, sideLen);
+    b[off + 4] = (crc >> 8) & 0xff;
+    b[off + 5] = crc & 0xff;
+  }
+}
+
+/* Longest possible Layer III frame (MPEG1, 320 kbps, 32 kHz, padded). Used
+   to bound how much we'll hold waiting for a frame to complete — past that
+   the bytes plainly aren't frames, so we stop holding and pass them on. */
+const MAX_FRAME_BYTES = 1441;
+
+/* Streaming gain filter for one track. `push` returns the bytes that are
+   ready to go out; a partial trailing frame is held until the next chunk,
+   and `flush` releases whatever is left at end of track.
+
+   Sync is acquired conservatively: a candidate header is only believed once
+   another header is confirmed exactly one frame length later. 0xFF bytes are
+   common inside audio data, and the folder listing also admits flac/ogg/m4a,
+   which we must not edit at all — a lone plausible-looking header is not
+   enough to start writing into a buffer. Once locked we walk frame to frame
+   and stop re-checking; a frame that doesn't parse drops the lock. Anything
+   never locked passes through byte for byte. */
+function makeGainFilter(steps) {
+  let carry = new Uint8Array(0);
+  let locked = false;
+  const stats = { frames: 0, clamped: 0, skipped: 0 };
+
+  return {
+    stats,
+    push(chunk) {
+      const buf = carry.length ? concat(carry, chunk) : chunk;
+      let done = 0;   // bytes fully processed and safe to emit
+      let i = 0;
+      let waiting = false;
+      while (i + 4 <= buf.length) {
+        const hdr = parseFrameHeader(buf, i);
+        if (!hdr) { locked = false; i++; continue; }
+        if (i + hdr.length > buf.length) { waiting = true; break; }
+        if (!locked) {
+          // Need the next header too before trusting this one.
+          if (i + hdr.length + 4 > buf.length) { waiting = true; break; }
+          if (!parseFrameHeader(buf, i + hdr.length)) { i++; continue; }
+          locked = true;
+        }
+        shiftFrameGain(buf, i, hdr, steps, stats);
+        i += hdr.length;
+        done = i;
+      }
+      if (!waiting) {
+        // Scanned to the end: only a partial sync word is worth keeping.
+        done = Math.max(done, buf.length - 3);
+      } else if (buf.length - done > 2 * MAX_FRAME_BYTES + 4) {
+        // A held frame is bounded by its own length, so this shouldn't be
+        // reachable — but never stall the stream on it. Pass the bytes on
+        // untouched and re-acquire sync from scratch.
+        locked = false;
+        done = buf.length - 3;
+      }
+      carry = buf.slice(done);
+      return buf.subarray(0, done);
+    },
+    flush() {
+      const rest = carry;
+      carry = new Uint8Array(0);
+      return rest;
+    },
+  };
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function concat(a, b) {
@@ -655,6 +876,11 @@ async function handleStream(path, request, env, ctx) {
         radio: `${origin}/radio?folder=${encodeURIComponent(s.names[0])}`,
         m3u: `${origin}/playlist.m3u?folder=${encodeURIComponent(s.names[0])}`,
       })),
+      gain: {
+        param: 'gain',
+        unit: 'dB',
+        note: `Add &gain=<dB> to a /radio URL to play louder. Rounded to ${GAIN_DB_PER_STEP} dB steps, capped at ±${GAIN_MAX_DB} dB. 4.5 suits a telephone hotline.`,
+      },
     });
   }
 
@@ -664,6 +890,10 @@ async function handleStream(path, request, env, ctx) {
   const folder = resolveFolder(requested);
 
   const wantShuffle = url.searchParams.get('shuffle') !== '0';
+  // `gain` is the documented name; `db` and `volume` are what people guess.
+  const steps = gainSteps(
+    url.searchParams.get('gain') ?? url.searchParams.get('db') ?? url.searchParams.get('volume'),
+  );
 
   let tracks;
   try {
@@ -701,6 +931,9 @@ async function handleStream(path, request, env, ctx) {
     'Cache-Control': 'no-store, no-transform',
     'icy-name': headerSafe(folder.split('/').pop() || 'Oitzer HaNigunim'),
     'icy-description': 'Oitzer HaNigunim',
+    // Echo what we actually applied, which is the request rounded to whole
+    // 1.5 dB steps and capped — so `?gain=99` is visibly not 99.
+    'x-gain-db': String(steps * GAIN_DB_PER_STEP),
   };
 
   // A HEAD probe (players often send one first) must not spend the budget.
@@ -730,6 +963,10 @@ async function handleStream(path, request, env, ctx) {
           // tag can be dropped instead of played. It is literal "TAG" plus
           // text, and decoders render it as a click at every track change.
           let tail = new Uint8Array(0);
+          // Per track, because frame alignment doesn't carry across files:
+          // whatever partial frame is left at the end of one track has to be
+          // flushed before the next one starts.
+          const gain = steps ? makeGainFilter(steps) : null;
 
           const paceOut = async (data) => {
             const slice = Math.max(1024, Math.floor(bytesPerSec * CHUNK_SECONDS));
@@ -743,6 +980,11 @@ async function handleStream(path, request, env, ctx) {
               if (aheadMs > 0) await sleep(Math.min(aheadMs, 30000));
             }
           };
+
+          // With no gain asked for, bytes go straight out as before.
+          const emit = gain
+            ? async (data) => { const out = gain.push(data); if (out.length) await paceOut(out); }
+            : paceOut;
 
           while (true) {
             const { done, value } = await reader.read();
@@ -765,7 +1007,7 @@ async function handleStream(path, request, env, ctx) {
             // Emit everything except the last 128 bytes seen so far.
             const merged = tail.length ? concat(tail, buf) : buf;
             if (merged.length > 128) {
-              await paceOut(merged.subarray(0, merged.length - 128));
+              await emit(merged.subarray(0, merged.length - 128));
               tail = merged.slice(merged.length - 128);
             } else {
               tail = merged.slice();
@@ -773,7 +1015,11 @@ async function handleStream(path, request, env, ctx) {
           }
           // Whatever is left is audio unless it is an ID3v1 tag.
           if (!(tail.length === 128 && tail[0] === 0x54 && tail[1] === 0x41 && tail[2] === 0x47)) {
-            await paceOut(tail);
+            await emit(tail);
+          }
+          if (gain) {
+            const rest = gain.flush();
+            if (rest.length) await paceOut(rest);
           }
         }
         // Folder exhausted before the budget was — go round again so a
