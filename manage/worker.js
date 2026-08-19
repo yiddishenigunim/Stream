@@ -539,13 +539,22 @@ const LEAD_SECONDS = 15;
    Slicing to a quarter second makes delivery smooth instead of bursty. */
 const CHUNK_SECONDS = 0.25;
 
-/* Send this much faster than the measured bitrate.
+/* Fallback pacing, for bytes we can't read frame headers out of.
 
-   The rate comes from each track's first frame header, which is exact for CBR
-   but understates a VBR file whose later frames are denser. Pacing to an
-   understated rate starves the player, which sounds like the same stuttering
-   the burstiness causes. A margin makes underrun impossible at the cost of a
-   slightly deeper buffer. */
+   Frames carry their own duration — 1152 samples over the header's sample
+   rate (576 for MPEG2/2.5) — so paced audio is timed exactly, per frame, and
+   needs no margin at all. Only leftovers that aren't frames (a stray tag, a
+   non-MP3 file someone dropped in a folder) fall back to guessing from a byte
+   rate, and those get a margin so the guess errs toward sending early.
+
+   Guessing used to be the *only* path, and it was the cause of a reported
+   half-second dropout every 20-30 seconds on the telephone hotline. The rate
+   came from the first frame header in the file, which on a VBR file is the
+   Xing tag frame — it says 128 kbps no matter what follows. Measured across
+   the library the real averages are 161-197 kbps, so 128 x 1.25 = 160 kbps
+   went out against up to 197 kbps of demand: every file under-fed, the worst
+   by 19%. A listener's buffer drained at that rate, underran, refilled, and
+   drained again, which is exactly the periodic gap that was reported. */
 const PACE_MARGIN = 1.25;
 // Used until a frame header is read. 320 kbps is the MP3 ceiling, so assuming
 // it can only ever make us send early (more buffer), never late (a stall).
@@ -635,11 +644,16 @@ function parseFrameHeader(b, i) {
   if (version === 1 || layer !== 1 || bitrateIdx === 0 || bitrateIdx === 15 || rateIdx === 3) return null;
   const lsf = version !== 3;               // MPEG2/2.5 = "lower sampling frequency"
   const kbps = (lsf ? BITRATES_V2L3 : BITRATES_V1L3)[bitrateIdx];
-  const length = Math.floor((lsf ? 72000 : 144000) * kbps / SAMPLE_RATES[version][rateIdx])
+  const sampleRate = SAMPLE_RATES[version][rateIdx];
+  const length = Math.floor((lsf ? 72000 : 144000) * kbps / sampleRate)
     + ((b[i + 2] >> 1) & 0x01);            // padding byte
   return {
     length,
     lsf,
+    // Every Layer III frame is a fixed number of samples, so its playing time
+    // follows from the header alone — no assumption about the file's bitrate,
+    // which is the whole point on VBR material.
+    seconds: (lsf ? 576 : 1152) / sampleRate,
     hasCrc: (b[i + 1] & 0x01) === 0,       // the bit is set when there is NO CRC
     channels: ((b[i + 3] >> 6) & 0x03) === 3 ? 1 : 2,
   };
@@ -741,9 +755,13 @@ function shiftFrameGain(b, off, hdr, steps, stats) {
    the bytes plainly aren't frames, so we stop holding and pass them on. */
 const MAX_FRAME_BYTES = 1441;
 
-/* Streaming gain filter for one track. `push` returns the bytes that are
-   ready to go out; a partial trailing frame is held until the next chunk,
-   and `flush` releases whatever is left at end of track.
+/* Streaming frame filter for one track. `push` returns the bytes that are
+   ready to go out together with how many seconds of audio they are, and
+   `flush` releases whatever is left at end of track.
+
+   It runs on every stream, not just when gain is asked for, because the
+   pump needs those exact per-frame durations to pace by. With steps = 0 it
+   reads frames and changes nothing.
 
    Sync is acquired conservatively: a candidate header is only believed once
    another header is confirmed exactly one frame length later. 0xFF bytes are
@@ -751,8 +769,8 @@ const MAX_FRAME_BYTES = 1441;
    which we must not edit at all — a lone plausible-looking header is not
    enough to start writing into a buffer. Once locked we walk frame to frame
    and stop re-checking; a frame that doesn't parse drops the lock. Anything
-   never locked passes through byte for byte. */
-function makeGainFilter(steps) {
+   never locked passes through byte for byte, and is paced by the fallback. */
+function makeFrameFilter(steps) {
   let carry = new Uint8Array(0);
   let locked = false;
   const stats = { frames: 0, clamped: 0, skipped: 0 };
@@ -762,6 +780,7 @@ function makeGainFilter(steps) {
     push(chunk) {
       const buf = carry.length ? concat(carry, chunk) : chunk;
       let done = 0;   // bytes fully processed and safe to emit
+      let seconds = 0;
       let i = 0;
       let waiting = false;
       while (i + 4 <= buf.length) {
@@ -774,7 +793,9 @@ function makeGainFilter(steps) {
           if (!parseFrameHeader(buf, i + hdr.length)) { i++; continue; }
           locked = true;
         }
-        shiftFrameGain(buf, i, hdr, steps, stats);
+        if (steps) shiftFrameGain(buf, i, hdr, steps, stats);
+        else stats.frames++;
+        seconds += hdr.seconds;
         i += hdr.length;
         done = i;
       }
@@ -789,7 +810,9 @@ function makeGainFilter(steps) {
         done = buf.length - 3;
       }
       carry = buf.slice(done);
-      return buf.subarray(0, done);
+      // `seconds` covers the frames only. Anything emitted around them is
+      // passthrough, and the pump prices that from the fallback rate.
+      return { bytes: buf.subarray(0, done), seconds };
     },
     flush() {
       const rest = carry;
@@ -966,25 +989,29 @@ async function handleStream(path, request, env, ctx) {
           // Per track, because frame alignment doesn't carry across files:
           // whatever partial frame is left at the end of one track has to be
           // flushed before the next one starts.
-          const gain = steps ? makeGainFilter(steps) : null;
+          const frames = makeFrameFilter(steps);
 
-          const paceOut = async (data) => {
-            const slice = Math.max(1024, Math.floor(bytesPerSec * CHUNK_SECONDS));
+          // `seconds` is the real playing time of `data` when we could read
+          // it off the frames, or 0 to fall back to the estimated byte rate.
+          const paceOut = async (data, seconds) => {
+            if (!data.length) return;
+            const rate = seconds > 0
+              ? data.length / seconds                  // exact, even on VBR
+              : bytesPerSec * PACE_MARGIN;             // guess, erring early
+            const slice = Math.max(1024, Math.floor(rate * CHUNK_SECONDS));
             for (let off = 0; off < data.length; off += slice) {
               const piece = data.subarray(off, off + slice);
               await writer.write(piece);
-              // A pacing clock, not real duration: PACE_MARGIN deliberately
-              // makes it run short so we stay ahead of the decoder.
-              queuedSeconds += piece.length / (bytesPerSec * PACE_MARGIN);
+              queuedSeconds += piece.length / rate;
               const aheadMs = queuedSeconds * 1000 - (Date.now() - startedAt) - LEAD_SECONDS * 1000;
               if (aheadMs > 0) await sleep(Math.min(aheadMs, 30000));
             }
           };
 
-          // With no gain asked for, bytes go straight out as before.
-          const emit = gain
-            ? async (data) => { const out = gain.push(data); if (out.length) await paceOut(out); }
-            : paceOut;
+          const emit = async (data) => {
+            const out = frames.push(data);
+            await paceOut(out.bytes, out.seconds);
+          };
 
           while (true) {
             const { done, value } = await reader.read();
@@ -1017,10 +1044,8 @@ async function handleStream(path, request, env, ctx) {
           if (!(tail.length === 128 && tail[0] === 0x54 && tail[1] === 0x41 && tail[2] === 0x47)) {
             await emit(tail);
           }
-          if (gain) {
-            const rest = gain.flush();
-            if (rest.length) await paceOut(rest);
-          }
+          const rest = frames.flush();
+          if (rest.length) await paceOut(rest, 0);
         }
         // Folder exhausted before the budget was — go round again so a
         // short folder still behaves like a continuous station.

@@ -194,6 +194,13 @@ playlist you can skip through; `/radio` is the one that behaves like a station.
   Python/aiohttp based, so its User-Agent matches the `python` entry in
   `blockedBots` — routed normally it would get a 403. They're handled up front
   with `/list`, `/object`, … for the same reason bulk uploads are.
+- **Pacing is frame-exact.** The pump reads each MP3 frame's header and adds
+  its true playing time (1152 samples over the sample rate, 576 for MPEG2), so
+  a VBR file is fed at whatever rate it actually needs. It used to estimate
+  from the first frame header in the file — which on a VBR file is the Xing
+  tag frame, and that says 128 kbps regardless of what follows. The library's
+  real averages are 161–197 kbps, so every stream was under-fed by up to 19%
+  and listeners heard a gap whenever their buffer ran dry.
 - **Reconnects are normal.** Cloudflare caps subrequests per invocation (50
   free / 1000 paid) and each track spends one, so `/radio` ends the response
   after `RADIO_MAX_TRACKS` (45 ≈ 3 hours). Players reconnect automatically. On
