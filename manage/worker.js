@@ -158,25 +158,40 @@ export default {
 
     try {
       const startTime = Date.now();
-      const list = await env.BUCKET.list({ prefix: folder + '/' });
+      // Paged: asking for customMetadata (the loudness) lets R2 return fewer
+      // than 1000 objects per page, so one list() call is no longer the
+      // whole folder.
+      const objects = [];
+      let cursor;
+      do {
+        const page = await env.BUCKET.list({ prefix: folder + '/', cursor, include: ['customMetadata'] });
+        objects.push(...page.objects);
+        cursor = page.truncated ? page.cursor : undefined;
+      } while (cursor);
       const listTime = Date.now() - startTime;
 
-      console.log(`[${requestId}] R2 list took ${listTime}ms - found ${list.objects.length} objects`);
+      console.log(`[${requestId}] R2 list took ${listTime}ms - found ${objects.length} objects`);
 
-      const files = list.objects
+      const files = objects
         .filter(obj => obj.key.match(/\.(mp3|wav|ogg|m4a|flac|aac|wma)$/i))
-        .map(obj => ({
-          name: obj.key.split('/').pop(),
-          key: obj.key,
-          size: obj.size
-        }));
+        .map(obj => {
+          const file = {
+            name: obj.key.split('/').pop(),
+            key: obj.key,
+            size: obj.size
+          };
+          // dB that brings this file to LOUD_TARGET, when it has been measured.
+          const loud = loudness(obj.customMetadata);
+          if (loud) file.gain = loud.gainDb;
+          return file;
+        });
 
       console.log(`[${requestId}] SUCCESS - returning ${files.length} audio files`);
 
       // Log if folder seems empty (potential issue)
       if (files.length === 0) {
         console.log(`[${requestId}] WARNING - No audio files found in folder: "${folder}"`);
-        console.log(`[${requestId}] Raw objects found: ${list.objects.map(o => o.key).join(', ').slice(0, 500)}`);
+        console.log(`[${requestId}] Raw objects found: ${objects.map(o => o.key).join(', ').slice(0, 500)}`);
       }
 
       return new Response(JSON.stringify({ files }), {
@@ -198,12 +213,12 @@ export default {
    Management API — powers the /manage admin page.
    ═══════════════════════════════════════════════════════════════════ */
 
-const MANAGE_PATHS = ['/list', '/object', '/delete', '/copy', '/move', '/mkdir', '/deletePrefix'];
+const MANAGE_PATHS = ['/list', '/object', '/delete', '/copy', '/move', '/mkdir', '/deletePrefix', '/loudness'];
 
 const MANAGE_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Loudness-Lufs, X-Loudness-Peak',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -246,12 +261,19 @@ async function handleManage(path, request, env) {
       const files = [];
       let cursor;
       do {
-        const res = await bucket.list({ prefix, delimiter: '/', cursor, limit: 1000 });
+        const res = await bucket.list({ prefix, delimiter: '/', cursor, limit: 1000, include: ['customMetadata'] });
         for (const p of res.delimitedPrefixes) folders.add(p);
         for (const o of res.objects) {
           const name = o.key.slice(prefix.length);
           if (name === '' || name === '.keep') continue; // folder placeholder
-          files.push({ key: o.key, name, size: o.size, uploaded: o.uploaded });
+          const loud = loudness(o.customMetadata);
+          files.push({
+            key: o.key, name, size: o.size, uploaded: o.uploaded,
+            // null = not measured yet, which is what the "Even volume" pass looks for
+            lufs: loud ? loud.lufs : null,
+            peak: loud ? loud.peak : null,
+            gain: loud ? loud.gainDb : null,
+          });
         }
         cursor = res.truncated ? res.cursor : undefined;
       } while (cursor);
@@ -275,10 +297,36 @@ async function handleManage(path, request, env) {
     if (path === '/object' && method === 'PUT') {
       const key = url.searchParams.get('key');
       if (!key) return mjson({ error: 'missing key' }, 400);
+      // The page measures a file's loudness before sending it, so a new
+      // upload arrives already levelled. No headers = not measured, which
+      // the "Even volume" pass picks up later.
+      const meta = loudnessMeta(request.headers.get('x-loudness-lufs'), request.headers.get('x-loudness-peak'));
       await bucket.put(key, request.body, {
         httpMetadata: { contentType: request.headers.get('content-type') || 'application/octet-stream' },
+        ...(meta ? { customMetadata: meta } : {}),
       });
-      return mjson({ ok: true, key });
+      return mjson({ ok: true, key, loudness: !!meta });
+    }
+
+    // ── Record a file's measured loudness ──
+    // R2 can't edit metadata in place, so the object is rewritten onto
+    // itself with the same bytes and the measurement added. `etagMatches`
+    // makes that a no-op if the file was replaced while it was measured —
+    // the new upload's number would otherwise be the old file's.
+    if (path === '/loudness' && method === 'POST') {
+      const { key, lufs, peak } = await request.json();
+      if (!key) return mjson({ error: 'missing key' }, 400);
+      const meta = loudnessMeta(lufs, peak);
+      if (!meta) return mjson({ error: 'bad lufs/peak' }, 400);
+      const obj = await bucket.get(key);
+      if (!obj) return mjson({ error: 'not found' }, 404);
+      const put = await bucket.put(key, obj.body, {
+        httpMetadata: obj.httpMetadata,
+        customMetadata: { ...obj.customMetadata, ...meta },
+        onlyIf: { etagMatches: obj.etag },
+      });
+      if (!put) return mjson({ error: 'file changed while it was measured' }, 409);
+      return mjson({ ok: true, key, ...loudness(meta) });
     }
 
     // ── Delete a list of keys ──
@@ -354,6 +402,7 @@ async function handleManage(path, request, env) {
      folder=<f>   required, same folder string the web player uses
      shuffle=0    play alphabetically instead of shuffled
      gain=<dB>    /radio only — play louder (see "Loudness" below)
+     normalize=0  /radio only — skip the per-track levelling ("Even volume")
    ═══════════════════════════════════════════════════════════════════ */
 
 const STREAM_PATHS = ['/radio', '/playlist.m3u', '/stations'];
@@ -620,6 +669,64 @@ function sniffBytesPerSec(b) {
 const GAIN_DB_PER_STEP = 1.5;   // one global_gain step, per the MP3 spec
 const GAIN_MAX_DB = 12;
 
+/* ── Even volume (normalisation) ──────────────────────────────────────
+
+   Tracks in the library differ by up to ~8 dB, so a station jumps between
+   a quiet nigun and a loud one. Each file's loudness is measured once —
+   BS.1770 integrated LUFS plus its sample peak, by the /manage page in the
+   admin's browser (there is no decoder in a Worker) — and kept on the R2
+   object as customMetadata { lufs, peak }. From that, every file gets the
+   correction that brings it to LOUD_TARGET:
+
+     - the website turns loud files DOWN through audio.volume (it can't go
+       above 1, so quiet files stay as they are there);
+     - /radio applies the whole correction, up or down, through the same
+       global_gain rewrite `?gain=` uses — lossless, 1.5 dB steps.
+
+   Same rules as the main site's player (loudness-core.js there), with one
+   difference: the target. The main site's recordings sit at a median of
+   -12.4 LUFS and aim for -14. This library measured a median of -16 with
+   peaks from -8.5 to -0.6 dBFS, so -16 changes the typical track not at
+   all, lifts only the quiet ones, and leaves an existing `&gain=` URL
+   (the hotline's 4.5) as loud as it was.
+
+   A boost is capped by the file's own peak, so levelling never clips:
+   /radio has no limiter to catch an over. A file with no measurement
+   plays exactly as before. */
+
+const LOUD_TARGET = -16;   // LUFS
+const LOUD_MAX_CUT = 12;   // dB
+const LOUD_MAX_BOOST = 6;  // dB, and never past the file's peak
+const LOUD_FLOOR = -70;    // LUFS: below it the measurement is silence, not a level
+
+// Validates a measurement and formats it for customMetadata, or null.
+function loudnessMeta(lufs, peak) {
+  if (lufs === null || lufs === undefined || lufs === '' || peak === null || peak === undefined || peak === '') return null;
+  const l = Number(lufs), p = Number(peak);
+  if (!Number.isFinite(l) || !Number.isFinite(p) || l < LOUD_FLOOR || l > 0 || p < -100 || p > 20) return null;
+  return { lufs: l.toFixed(2), peak: p.toFixed(2) };
+}
+
+// { lufs, peak, gainDb } for a measured object, or null. gainDb is in half
+// dB; a boost rounds down so it stays inside the peak's headroom.
+function loudness(meta) {
+  if (!meta || meta.lufs === undefined || meta.peak === undefined) return null;
+  const lufs = Number(meta.lufs), peak = Number(meta.peak);
+  if (!Number.isFinite(lufs) || !Number.isFinite(peak) || lufs < LOUD_FLOOR) return null;
+  const g = Math.max(-LOUD_MAX_CUT, Math.min(LOUD_TARGET - lufs, LOUD_MAX_BOOST, Math.max(0, -peak)));
+  return { lufs, peak, gainDb: g > 0 ? Math.floor(g * 2) / 2 : Math.round(g * 2) / 2 || 0 };
+}
+
+// The same correction in global_gain steps for /radio. Rounds to the
+// nearest 1.5 dB, except that a boost never rounds up past the headroom.
+function loudSteps(meta) {
+  const l = loudness(meta);
+  if (!l) return 0;
+  let steps = Math.round(l.gainDb / GAIN_DB_PER_STEP);
+  while (steps > 0 && steps * GAIN_DB_PER_STEP > Math.min(LOUD_MAX_BOOST, -l.peak)) steps--;
+  return steps;
+}
+
 const SAMPLE_RATES = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] };
 
 // Requested dB → whole global_gain steps. Anything unparseable means 0,
@@ -868,9 +975,9 @@ async function listAudio(bucket, folder) {
   const out = [];
   let cursor;
   do {
-    const res = await bucket.list({ prefix, cursor, limit: 1000 });
+    const res = await bucket.list({ prefix, cursor, limit: 1000, include: ['customMetadata'] });
     for (const o of res.objects) {
-      if (AUDIO_RE.test(o.key)) out.push({ key: o.key, name: o.key.split('/').pop() });
+      if (AUDIO_RE.test(o.key)) out.push({ key: o.key, name: o.key.split('/').pop(), meta: o.customMetadata });
     }
     cursor = res.truncated ? res.cursor : undefined;
   } while (cursor);
@@ -904,6 +1011,11 @@ async function handleStream(path, request, env, ctx) {
         unit: 'dB',
         note: `Add &gain=<dB> to a /radio URL to play louder. Rounded to ${GAIN_DB_PER_STEP} dB steps, capped at ±${GAIN_MAX_DB} dB. 4.5 suits a telephone hotline.`,
       },
+      normalize: {
+        param: 'normalize',
+        target: LOUD_TARGET,
+        note: `/radio plays every measured track at ${LOUD_TARGET} LUFS (cut up to ${LOUD_MAX_CUT} dB, boost up to ${LOUD_MAX_BOOST} dB but never past the track's peak). &normalize=0 plays the files as they are. &gain applies on top.`,
+      },
     });
   }
 
@@ -917,6 +1029,8 @@ async function handleStream(path, request, env, ctx) {
   const steps = gainSteps(
     url.searchParams.get('gain') ?? url.searchParams.get('db') ?? url.searchParams.get('volume'),
   );
+  // Even volume is on unless a URL asks for the files as they are.
+  const normalize = !['0', 'false', 'off', 'no'].includes((url.searchParams.get('normalize') || '').toLowerCase());
 
   let tracks;
   try {
@@ -957,6 +1071,7 @@ async function handleStream(path, request, env, ctx) {
     // Echo what we actually applied, which is the request rounded to whole
     // 1.5 dB steps and capped — so `?gain=99` is visibly not 99.
     'x-gain-db': String(steps * GAIN_DB_PER_STEP),
+    'x-normalize': normalize ? `on; target=${LOUD_TARGET} LUFS` : 'off',
   };
 
   // A HEAD probe (players often send one first) must not spend the budget.
@@ -989,7 +1104,8 @@ async function handleStream(path, request, env, ctx) {
           // Per track, because frame alignment doesn't carry across files:
           // whatever partial frame is left at the end of one track has to be
           // flushed before the next one starts.
-          const frames = makeFrameFilter(steps);
+          // The URL's &gain plus this track's own levelling correction.
+          const frames = makeFrameFilter(steps + (normalize ? loudSteps(t.meta) : 0));
 
           // `seconds` is the real playing time of `data` when we could read
           // it off the frames, or 0 to fall back to the estimated byte rate.

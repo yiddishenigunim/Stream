@@ -155,6 +155,7 @@
         .list-head { display: flex; align-items: center; gap: 12px; padding: 6px 14px; margin-top: 14px; font-size: 0.8em; opacity: 0.6; letter-spacing: 0.5px; text-transform: uppercase; }
         .list-head .h-name { flex: 1; }
         .list-head .h-size { width: 90px; }
+        .list-head .h-level { width: 82px; }
         .list-head .h-act { width: 34px; }
 
         #file-list { position: relative; margin-top: 4px; height: 52vh; min-height: 240px; overflow-y: auto; overflow-x: hidden; border: 1px solid var(--glass-border); border-radius: 16px; background: rgba(0,0,0,0.18); }
@@ -176,6 +177,8 @@
         .frow.playing .fname { color: var(--gold-light); font-weight: 600; }
         .fname { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.96em; direction: rtl; text-align: left; }
         .fsize { width: 90px; font-size: 0.82em; opacity: 0.65; }
+        .flevel { width: 82px; font-size: 0.8em; opacity: 0.65; font-variant-numeric: tabular-nums; }
+        .flevel.none { opacity: 0.3; }
         .frow-del { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(255,255,255,0.05); color: #ffb3bd; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; opacity: 0; transition: opacity 0.15s, background 0.15s; }
         .frow:hover .frow-del { opacity: 1; }
         .frow-del:hover { background: var(--danger); color: #fff; }
@@ -207,6 +210,8 @@
         .pp-item.error .pp-fill { background: linear-gradient(90deg, #8b2b38, var(--danger)); width: 100% !important; }
         .pp-item.error .pp-pct { color: #ffb3bd; }
         .pp-foot { margin-top: 10px; font-size: 0.8em; opacity: 0.75; text-align: center; }
+        .pp-stop { margin-left: 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--cream); border-radius: 8px; padding: 3px 10px; font-family: inherit; font-size: 1em; cursor: pointer; }
+        .pp-stop:hover { border-color: var(--danger); }
 
         /* PIN overlay */
         #pin-overlay { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; background: rgba(5,12,24,0.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -231,7 +236,7 @@
             .header h1 { font-size: 2em; }
             .search-box, .search-box input, .search-box input:focus { width: 100%; flex: 1 1 100%; }
             .toolbar-spacer { display: none; }
-            .fsize { display: none; }
+            .fsize, .flevel, .list-head .h-level { display: none; }
             .category-btn { flex: 0 0 calc(50% - 8px); }
         }
     </style>
@@ -338,6 +343,10 @@
                     <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     Delete <span class="tool-kbd">Del</span>
                 </button>
+                <button class="tool-btn" id="btn-level" title="Measure every file's loudness so the whole system plays at one volume">
+                    <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    Even volume
+                </button>
                 <div class="toolbar-spacer"></div>
                 <button class="tool-btn" id="btn-refresh" title="Refresh">
                     <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -353,6 +362,7 @@
 
             <div class="list-head">
                 <span class="h-name">Name</span>
+                <span class="h-level" title="Measured loudness, and the correction the player applies">Level</span>
                 <span class="h-size">Size</span>
                 <span class="h-act"></span>
             </div>
@@ -457,6 +467,7 @@
         return (n/1073741824).toFixed(2) + ' GB';
     }
     function joinKey(prefix, name){ return (prefix || '') + name; }
+    const AUDIO_RE = /\.(mp3|wav|ogg|m4a|flac|aac|wma)$/i;
     function baseName(key){ const k = key.replace(/\/+$/,''); return k.slice(k.lastIndexOf('/') + 1); }
 
     async function api(path, opts){
@@ -530,6 +541,7 @@
                 <span class="fcheck" data-check="1" title="Select">${sel?'✓':''}</span>
                 <span class="fico">${playing?'⏸':'▶'}</span>
                 <span class="fname" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+                ${levelCell(f)}
                 <span class="fsize">${fmtSize(f.size)}</span>
                 <button class="frow-del" data-del="1" title="Delete">✕</button>
             </div>`;
@@ -647,6 +659,163 @@
         if (crumb && !crumb.classList.contains('current')) navigate(crumb.getAttribute('data-prefix'));
     });
 
+    // ── Even volume ──
+    // Every file's loudness is measured here, in the browser (a Worker has
+    // no audio decoder), and stored on the R2 object. The worker turns that
+    // into a per-file correction to one target level: /radio applies it up
+    // or down, the website turns loud files down. A new upload is measured
+    // before it is sent; "Even volume" measures everything already there.
+
+    // BS.1770-4 integrated loudness (LUFS) and sample peak (dBFS) of decoded
+    // audio — the same measurement as the main site's audio scan. K-weighting
+    // is two biquads with coefficients worked out from the sample rate (the
+    // 48 kHz table is off on a 44.1 kHz file); 400 ms blocks with 75%
+    // overlap; gates at -70 LUFS absolute and -10 LU relative. It streams
+    // through each channel once, keeping only 100 ms energies, so it needs
+    // no copy of the audio: a long track is big enough in memory already.
+    function measureLoudness(channels, sr){
+        const hop = Math.round(sr * 0.1), nHops = Math.floor(channels[0].length / hop);
+        if (nHops < 4) return null;
+        let K = Math.tan(Math.PI * 1681.974450955533 / sr), Q = 0.7071752369554196;
+        const Vh = Math.pow(10, 3.999843853973347 / 20), Vb = Math.pow(Vh, 0.4996667741545416);
+        let d = 1 + K / Q + K * K;
+        const b0 = (Vh + Vb * K / Q + K * K) / d, b1 = 2 * (K * K - Vh) / d, b2 = (Vh - Vb * K / Q + K * K) / d;
+        const a1 = 2 * (K * K - 1) / d, a2 = (1 - K / Q + K * K) / d;
+        K = Math.tan(Math.PI * 38.13547087602444 / sr); Q = 0.5003270373238773;
+        d = 1 + K / Q + K * K;
+        const c1 = 2 * (K * K - 1) / d, c2 = (1 - K / Q + K * K) / d;   // high-pass, b = [1, -2, 1]
+        const energy = new Float64Array(nHops);
+        let peak = 0;
+        for (const x of channels){
+            let x1 = 0, x2 = 0, y1 = 0, y2 = 0, z1 = 0, z2 = 0;
+            for (let h = 0, i = 0; h < nHops; h++){
+                let acc = 0;
+                for (const end = i + hop; i < end; i++){
+                    const v = x[i];
+                    if (v > peak) peak = v; else if (-v > peak) peak = -v;
+                    const y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+                    const z = y - 2 * y1 + y2 - c1 * z1 - c2 * z2;
+                    x2 = x1; x1 = v; y2 = y1; y1 = y; z2 = z1; z1 = z;
+                    acc += z * z;
+                }
+                energy[h] += acc;
+            }
+        }
+        const nBlocks = nHops - 3, z = new Float64Array(nBlocks);
+        for (let b = 0; b < nBlocks; b++) z[b] = (energy[b] + energy[b + 1] + energy[b + 2] + energy[b + 3]) / (4 * hop);
+        const level = (e) => -0.691 + 10 * Math.log10(e);
+        const gated = (min) => { let s = 0, c = 0; for (const e of z) if (e > 0 && level(e) > min) { s += e; c++; } return c ? s / c : 0; };
+        const abs = gated(-70);
+        if (!abs) return null;
+        const rel = gated(level(abs) - 10);
+        return { lufs: +level(rel).toFixed(2), peak: +(20 * Math.log10(Math.max(peak, 1e-6))).toFixed(2) };
+    }
+
+    // Files above this aren't decoded at all (an hour of audio is ~1.5 GB
+    // once decoded); above MEASURE_HALF_RATE they're decoded at 22.05 kHz,
+    // which halves that and moves LUFS by < 0.1 dB. Resampling can shave a
+    // peak, so those get a dB of extra room — the peak caps how far /radio
+    // may raise a file without clipping.
+    const MEASURE_MAX_BYTES = 120e6, MEASURE_HALF_RATE = 30e6;
+
+    // One decode at a time: uploads run 3 in parallel, and three decoded
+    // tracks at once is a lot of memory for nothing.
+    let _measureChain = Promise.resolve();
+    function measureBytes(getBuffer, size){
+        const run = async () => {
+            if (size > MEASURE_MAX_BYTES) return null;
+            const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            if (!AC) return null;
+            const half = size > MEASURE_HALF_RATE;
+            const audio = await new AC(1, 1, half ? 22050 : 44100).decodeAudioData(await getBuffer());
+            const chans = [];
+            for (let c = 0; c < Math.min(2, audio.numberOfChannels); c++) chans.push(audio.getChannelData(c));
+            const r = measureLoudness(chans, audio.sampleRate);
+            if (r && half) r.peak = +(r.peak + 1).toFixed(2);
+            return r;
+        };
+        const p = _measureChain.then(run, run);
+        _measureChain = p.catch(() => {});
+        return p;
+    }
+
+    function levelCell(f){
+        if (f.lufs == null) return `<span class="flevel none" title="Not measured yet — click Even volume">—</span>`;
+        const g = f.gain || 0, corr = g === 0 ? '±0' : (g > 0 ? '+' : '−') + Math.abs(g).toFixed(1);
+        const tip = `${f.lufs.toFixed(1)} LUFS, peak ${f.peak.toFixed(1)} dBFS. Correction ${corr} dB on /radio; the website only turns loud files down.`;
+        return `<span class="flevel" title="${escHtml(tip)}">${f.lufs.toFixed(1)} LUFS</span>`;
+    }
+
+    // Every file in the bucket, folder by folder (the /list route is one level).
+    async function listAllFiles(prefix, out){
+        out = out || [];
+        const data = await api('/list?prefix=' + encodeURIComponent(prefix));
+        out.push(...(data.files || []));
+        for (const f of (data.folders || [])) await listAllFiles(f, out);
+        return out;
+    }
+
+    let _levelJob = null;
+    const LEVEL_CONCURRENCY = 2;
+    async function evenVolume(){
+        if ((_uploadBatch && !_uploadBatch.finished) || (_levelJob && !_levelJob.finished)){ alert('Wait for the current job to finish first.'); return; }
+        if (!confirm('Measure the loudness of every file that hasn\'t been measured yet, in all folders?\n\n' +
+            'Each file is downloaded and measured in this browser, so keep this tab open. It can be stopped and continued later — measured files are skipped.')) return;
+        const job = _levelJob = _job = { kind: 'level', items: [], done: 0, failed: 0, stop: false, finished: false, started: Date.now() };
+        showProgress('Finding files...');
+        let all;
+        try { all = await listAllFiles(''); }
+        catch(e){ job.finished = true; $('pp-title').textContent = "Couldn't list files: " + e.message; return; }
+        const todo = all.filter(f => AUDIO_RE.test(f.key) && f.lufs == null);
+        job.measuredBefore = all.length - todo.length;
+        if (!todo.length){
+            job.finished = true;
+            $('pp-title').textContent = `All ${all.length} files are measured ✓`;
+            $('pp-foot').textContent = 'New uploads are measured automatically.';
+            return;
+        }
+        job.items = todo.map(f => ({ key: f.key, name: f.name, size: f.size, pct: 0, status: 'queued' }));
+        $('pp-title').textContent = 'Measuring loudness...';
+        renderProgress();
+        let idx = 0;
+        const worker = async () => { while (!job.stop && idx < job.items.length) await levelOne(job, job.items[idx++]); };
+        await Promise.all(Array.from({ length: LEVEL_CONCURRENCY }, worker));
+        job.finished = true;
+        renderProgress();
+        $('pp-title').textContent = job.stop ? 'Stopped — click Even volume to continue'
+            : job.failed ? `Done with ${job.failed} problem${job.failed===1?'':'s'}` : 'Every file measured ✓';
+        await refresh();
+    }
+
+    async function levelOne(job, it){
+        for (let attempt = 0; ; attempt++){
+            try {
+                it.status = 'reading'; it.pct = 15; scheduleProgressRender();
+                if (it.size > MEASURE_MAX_BYTES){ const e = new Error('too large to measure'); e.fatal = true; throw e; }
+                const r = await fetch(MANAGE_API + '/object?key=' + encodeURIComponent(it.key));
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const buf = await r.arrayBuffer();
+                it.status = 'measuring'; it.pct = 50; scheduleProgressRender();
+                let loud;
+                try { loud = await measureBytes(() => buf, buf.byteLength); } catch(_) { loud = null; }
+                if (!loud){ const e = new Error("couldn't decode"); e.fatal = true; throw e; }
+                it.status = 'saving'; it.pct = 80; scheduleProgressRender();
+                await api('/loudness', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: it.key, lufs: loud.lufs, peak: loud.peak }) });
+                it.status = 'done'; it.pct = 100; it.note = loud.lufs.toFixed(1) + ' LUFS';
+                job.done++; scheduleProgressRender();
+                return;
+            } catch(e){
+                if (e.fatal || attempt >= 2 || job.stop){
+                    it.status = 'error'; it.err = e.message; job.failed++; scheduleProgressRender();
+                    return;
+                }
+                it.status = 'retry'; scheduleProgressRender();
+                await new Promise(r => setTimeout(r, 1500 * Math.pow(2, attempt)));
+            }
+        }
+    }
+
     // ── Operations ──
     async function deleteKeys(keys){
         if (!keys.length || busy) return;
@@ -667,19 +836,27 @@
         const list = [...fileList].filter(f => f.size !== undefined);
         if (!list.length) return;
         const items = list.map(f => ({ file: f, key: joinKey(currentPrefix, f.name), pct: 0, status: 'queued' }));
-        _uploadBatch = { items, targetPrefix: currentPrefix, done: 0, failed: 0 };
-        showProgress();
+        if (_levelJob && !_levelJob.finished){ alert('Wait for Even volume to finish (or stop it) before uploading.'); return; }
+        _uploadBatch = _job = { items, targetPrefix: currentPrefix, done: 0, failed: 0, finished: false };
+        showProgress('Uploading...');
         let idx = 0, active = 0;
         return new Promise((resolve) => {
             const pump = () => {
                 if (idx >= items.length && active === 0){ finishBatch(); resolve(); return; }
                 while (active < CONCURRENCY && idx < items.length){
                     const it = items[idx++]; active++;
-                    uploadOne(it).then(() => { active--; pump(); });
+                    measureUpload(it).then(() => uploadOne(it)).then(() => { active--; pump(); });
                 }
             };
             pump();
         });
+    }
+    // Measured once, before the first attempt — a retry reuses the number.
+    async function measureUpload(it){
+        it.loud = null;
+        if (!AUDIO_RE.test(it.file.name)) return;
+        it.status = 'measuring'; scheduleProgressRender();
+        try { it.loud = await measureBytes(() => it.file.arrayBuffer(), it.file.size); } catch(_) { it.loud = null; }
     }
     function uploadOne(it, attempt){
         attempt = attempt || 0;
@@ -698,6 +875,10 @@
             const xhr = new XMLHttpRequest();
             xhr.open('PUT', MANAGE_API + '/object?key=' + encodeURIComponent(it.key));
             xhr.setRequestHeader('Content-Type', it.file.type || 'application/octet-stream');
+            if (it.loud){
+                xhr.setRequestHeader('X-Loudness-Lufs', String(it.loud.lufs));
+                xhr.setRequestHeader('X-Loudness-Peak', String(it.loud.peak));
+            }
             it.status = 'uploading';
             xhr.upload.onprogress = (e) => { if (e.lengthComputable){ it.pct = Math.round(e.loaded / e.total * 100); scheduleProgressRender(); } };
             xhr.onload = () => {
@@ -713,30 +894,47 @@
     async function finishBatch(){
         if (!_uploadBatch) return;
         const { done, failed, items, targetPrefix } = _uploadBatch;
+        _uploadBatch.finished = true;
         $('pp-title').textContent = failed ? `Done with ${failed} problem${failed===1?'':'s'}` : 'All uploaded ✓';
         $('pp-foot').textContent = `${done}/${items.length} succeeded`;
         if (targetPrefix === currentPrefix) await refresh();
     }
     let _ppScheduled = false;
     function scheduleProgressRender(){ if (_ppScheduled) return; _ppScheduled = true; requestAnimationFrame(() => { _ppScheduled = false; renderProgress(); }); }
-    function showProgress(){ $('progress-panel').classList.add('show'); $('pp-title').textContent = 'Uploading...'; renderProgress(); }
+    let _job = null;   // whichever of the upload batch / Even volume pass the panel shows
+    function showProgress(title){ $('progress-panel').classList.add('show'); $('pp-title').textContent = title; $('pp-list').innerHTML = ''; $('pp-foot').textContent = ''; renderProgress(); }
     function renderProgress(){
-        if (!_uploadBatch) return;
-        const { items, done, failed } = _uploadBatch;
-        $('pp-foot').textContent = `${done + failed}/${items.length}`;
-        const inProgress = (s) => s === 'uploading' || s === 'queued' || s === 'retry';
+        if (!_job) return;
+        const { items, done, failed } = _job;
+        if (_job.kind === 'level'){
+            const n = done + failed, left = items.length - n;
+            const secs = n ? (Date.now() - _job.started) / 1000 / n * left : 0;
+            const eta = n && left ? ` · ~${secs < 90 ? Math.ceil(secs) + ' s' : Math.ceil(secs / 60) + ' min'} left` : '';
+            $('pp-foot').innerHTML = `${n}/${items.length}${eta}` +
+                (_job.finished ? '' : `<button class="pp-stop" id="pp-stop">${_job.stop ? 'Stopping…' : 'Stop'}</button>`);
+        } else {
+            $('pp-foot').textContent = `${done + failed}/${items.length}`;
+        }
+        const inProgress = (s) => !(s === 'done' || s === 'error');
         const active = items.filter(i => inProgress(i.status));
         const finished = items.filter(i => !inProgress(i.status)).slice(-40);
         const show = active.slice(0, 40).concat(finished).slice(-60);
         const pct = (it) => it.status === 'error' ? (it.err || 'error')
-            : it.status === 'retry' ? '↻ retry' : it.pct + '%';
+            : it.status === 'retry' ? '↻ retry'
+            : it.status === 'measuring' ? 'measuring…'
+            : it.status === 'reading' ? 'reading…'
+            : it.status === 'saving' ? 'saving…'
+            : it.note || it.pct + '%';
         $('pp-list').innerHTML = show.map(it => `
             <div class="pp-item ${it.status==='done'?'done':it.status==='error'?'error':''}">
-                <div class="pp-name"><span>${escHtml(it.file.name)}</span><span class="pp-pct">${pct(it)}</span></div>
+                <div class="pp-name"><span>${escHtml(it.name || it.file.name)}</span><span class="pp-pct">${pct(it)}</span></div>
                 <div class="pp-bar"><div class="pp-fill" style="width:${it.pct}%"></div></div>
             </div>`).join('');
     }
     $('pp-close').addEventListener('click', () => $('progress-panel').classList.remove('show'));
+    $('pp-foot').addEventListener('click', (e) => {
+        if (e.target.id === 'pp-stop' && _levelJob && !_levelJob.finished){ _levelJob.stop = true; renderProgress(); }
+    });
 
     // ── Drag & drop ──
     ['dragenter','dragover'].forEach(ev => listEl.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); listEl.classList.add('dragover'); }));
@@ -752,6 +950,7 @@
     $('btn-selectall').addEventListener('click', toggleSelectAll);
     $('btn-delete').addEventListener('click', () => deleteKeys([...selected]));
     $('btn-refresh').addEventListener('click', refresh);
+    $('btn-level').addEventListener('click', evenVolume);
     $('search').addEventListener('input', () => applyFilter(true));
     listEl.addEventListener('scroll', () => requestAnimationFrame(renderList), { passive: true });
     window.addEventListener('resize', () => requestAnimationFrame(renderList));

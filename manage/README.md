@@ -24,6 +24,8 @@ playing — opens that folder's **files** to manage. The file-management chrome
   folder chips + breadcrumb.
 - The file list is **virtualized** — only visible rows render — so it stays
   smooth with thousands of files.
+- **Even volume** — see [below](#even-volume). The *Level* column shows each
+  file's measured loudness (hover for the correction); `—` means not measured.
 
 **Files only:** creating/deleting *folders* and copy/cut/paste are intentionally
 not exposed — you can only add, play, and remove files. (The worker still ships
@@ -47,6 +49,58 @@ Bot Fight Mode for the zone, or add a WAF **Skip** rule for
 | `Delete` / `Backspace` | Delete selected |
 | `Esc` | Clear selection, or go back to categories |
 | `/` or `F2` | Focus search |
+
+## Even volume
+
+Tracks in the library differ by up to ~8 dB, so a station jumps between a
+quiet nigun and a loud one. Instead of fixing files one by one, every file's
+loudness is measured once and the players correct for it as they play. The
+files themselves are never re-encoded.
+
+**One time:** open `/manage`, any category, click **Even volume**. It walks
+every folder, downloads each file that hasn't been measured, measures it in
+the browser and saves the number. Keep the tab open; it shows progress and an
+estimate, and can be stopped and resumed (measured files are skipped). The
+whole library is ~3,000 files / 20 GB, so expect it to take a while — an
+hour or two on a fast connection.
+
+**After that:** nothing. Every upload through `/manage` is measured before it
+is sent. Running *Even volume* again only picks up files added some other way.
+
+What is measured: BS.1770-4 integrated loudness (LUFS) and the sample peak —
+the same measurement the main site's audio scan uses, checked against
+`ffmpeg -af ebur128` on 30 library tracks (within 0.05 dB). It is stored on
+the R2 object as `customMetadata { lufs, peak }`, so it follows the file on
+copy/move and disappears with it on delete.
+
+The rules (`loudness()` in `worker.js`, the same as the main site's
+`loudness-core.js` apart from the target):
+
+- **Target −16 LUFS** — the library's own median, so a typical track is
+  untouched and only the outliers move. (The main site aims for −14 because its
+  recordings are louder, median −12.4.)
+- A loud file comes **down**, at most 12 dB.
+- A quiet file goes **up**, at most 6 dB, and **never past its own peak** —
+  so levelling itself never clips.
+
+Where it applies:
+
+| | Turns loud files down | Lifts quiet files |
+| --- | --- | --- |
+| `/radio` (Music Assistant, the hotline …) | ✓ | ✓ |
+| The website | ✓ | — |
+| `/playlist.m3u` | — | — |
+
+`/radio` applies it through the same lossless `global_gain` rewrite as
+`&gain=` (1.5 dB steps). The website can only lower `audio.volume` (it stops
+at 1), and lifting would need a Web Audio graph, which needs CORS on the R2
+bucket and doesn't play with the phone locked on iOS — so there quiet files
+play as they are. The M3U hands out direct R2 URLs the worker never sees.
+
+Switches: `&normalize=0` on a `/radio` URL plays the files as they are;
+`localStorage['loud:off'] = '1'` does the same in one browser for the site.
+The website caches a folder's file list for an hour, so new measurements
+reach a returning listener within the hour.
 
 ## Access / PIN
 
@@ -100,9 +154,10 @@ Then add a matching header in `manage/index.html`'s `api()`/upload calls.
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
-| `GET` | `/list?prefix=<p>` | – | `{ folders:[..], files:[{key,name,size,uploaded}] }` |
+| `GET` | `/list?prefix=<p>` | – | `{ folders:[..], files:[{key,name,size,uploaded,lufs,peak,gain}] }` |
 | `GET` | `/object?key=<k>` | – | raw file bytes |
-| `PUT` | `/object?key=<k>` | file bytes | `{ ok, key }` |
+| `PUT` | `/object?key=<k>` | file bytes (+ optional `X-Loudness-Lufs`/`X-Loudness-Peak` headers) | `{ ok, key, loudness }` |
+| `POST` | `/loudness` | `{ key, lufs, peak }` | `{ ok, key, lufs, peak, gainDb }` |
 | `POST` | `/delete` | `{ keys:[..] }` | `{ ok, deleted }` |
 | `POST` | `/copy` | `{ from:[..], toPrefix }` | `{ ok, results }` |
 | `POST` | `/move` | `{ from:[..], toPrefix }` | `{ ok, results }` |
@@ -124,7 +179,9 @@ web stream.
 | `GET` | `/stations` | JSON: every station, its aliases and URLs |
 
 Both accept `&shuffle=0` to play alphabetically instead of shuffled. `/radio`
-also accepts `&gain=<dB>` — see [Loudness](#loudness) below.
+also accepts `&gain=<dB>` — see [Loudness](#loudness) below — and plays every
+measured track at one level unless given `&normalize=0` (see
+[Even volume](#even-volume)).
 
 ### Station names
 
@@ -156,6 +213,11 @@ hotter feed and then attenuates and band-limits it.
 
 **`&gain=4.5` is the recommended setting for hotline URLs.** Speakers and Music
 Assistant generally don't need it. `STATIONS.md` has the measured table.
+
+`&gain` applies on top of [Even volume](#even-volume): the tracks are first
+brought to −16 LUFS, then the whole feed is raised. Since −16 is where the
+library already sat, a hotline URL plays as loud as it did before, just
+without the jumps between tracks.
 
 How it works: every MP3 frame carries a `global_gain` field per granule per
 channel — an 8-bit exponent on the requantiser, worth 1.5 dB a step. The worker

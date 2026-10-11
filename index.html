@@ -1826,7 +1826,9 @@
                 
                 const songs = data.files.map(file => ({
                     name: file.name,
-                    url: `${R2_BASE_URL}/${encodeURIComponent(file.key).replace(/%2F/g, '/')}`
+                    url: `${R2_BASE_URL}/${encodeURIComponent(file.key).replace(/%2F/g, '/')}`,
+                    // dB to the shared level, once the file has been measured
+                    gain: typeof file.gain === 'number' ? file.gain : 0
                 }));
                 
                 allSongs[category] = songs;
@@ -2058,6 +2060,9 @@
             
             // Reset preloaded index since we're using it now
             preloadedIndex = -1;
+
+            _trackGain = track.gain || 0;
+            applyVolume();
             
             // Try to play, but don't force it (browser may block autoplay)
             const playPromise = audioPlayer.play();
@@ -2409,14 +2414,32 @@
             }
         }
         
+        // ── Even volume ──
+        // Every file is measured (in /manage) and the worker sends the dB
+        // that brings it to one shared level as `gain`. The tracks come
+        // straight from R2 with no CORS, so there is no Web Audio graph to
+        // boost through, and audio.volume stops at 1: here a loud file is
+        // turned down and a quiet one plays as it is. /radio, which rewrites
+        // the MP3's own gain fields, does both. Same rules as the main
+        // site's player; localStorage 'loud:off' = '1' switches it off.
+        let _userVolume = 1;   // what the slider shows
+        let _trackGain = 0;    // dB for the current track
+        function applyVolume() {
+            let off = false;
+            try { off = localStorage.getItem('loud:off') === '1'; } catch (_) { }
+            const factor = off ? 1 : Math.min(1, Math.pow(10, _trackGain / 20));
+            try { audioPlayer.volume = Math.max(0, Math.min(1, _userVolume * factor)); } catch (_) { /* iOS: read-only */ }
+        }
+
         // Volume control
         function changeVolume(event) {
             const volumeSlider = document.getElementById('volume-slider');
             const rect = volumeSlider.getBoundingClientRect();
-            const percent = (event.clientX - rect.left) / rect.width;
-            audioPlayer.volume = Math.max(0, Math.min(1, percent));
+            const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+            _userVolume = percent;
+            applyVolume();
             document.getElementById('volume-fill').style.width = (percent * 100) + '%';
-            Analytics.volumeChanged({ toVolume: audioPlayer.volume });
+            Analytics.volumeChanged({ toVolume: _userVolume });
         }
         
         // Format time helper

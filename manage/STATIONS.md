@@ -14,6 +14,10 @@ skippable playlist instead of a continuous station.
 Add `&gain=4.5` to play louder — see [Turning it up](#turning-it-up) below. It is
 what the telephone hotline URLs want; speakers generally don't need it.
 
+Every station plays its tracks **at one even volume** (−16 LUFS) once the files
+have been measured — see *Even volume* in `README.md`. Add `&normalize=0` to
+hear the files exactly as they are.
+
 | Station | Stream URL | Also answers to |
 | --- | --- | --- |
 | שיינע מארשן | `https://stream-api.oitzerhanigunim.org/radio?station=marshn` | `marshen`, `marshin`, `marshim`, `marsh`, `march` … |
