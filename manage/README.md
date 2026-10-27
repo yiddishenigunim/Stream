@@ -117,20 +117,21 @@ finds its URL. Keep the API URL private. If you want real protection, enable
 the `ADMIN_TOKEN` auth in the worker (see below) and send the token from the
 page.
 
-## Backend — update the existing worker (required)
+## Backend — the existing worker
 
 The static page **cannot** modify R2 on its own. The management endpoints live
 in the **existing `nigunim-api` worker** (the same one that serves
 `stream-api.oitzerhanigunim.org`). `manage/worker.js` is that worker with the
 management routes added — the original streaming logic is unchanged.
 
-1. Cloudflare → **Workers & Pages** → **`nigunim-api`** → **Edit code**.
-2. Select all, delete, and **paste the full contents of `manage/worker.js`**.
-3. **Deploy**.
+**Deploy:** since 2026-07-27 Cloudflare Workers Builds deploys
+`manage/worker.js` on every push to `main` (config: `wrangler.jsonc`). Do not
+paste code into the dashboard any more — the next push would overwrite it.
+(Before that, the steps were: Workers & Pages → `nigunim-api` → Edit code →
+paste → Deploy.)
 
-That's it. The R2 bucket is already bound as `env.BUCKET`, so there's nothing
-else to configure — no new worker, no new domain, no binding changes. The page
-already points at `https://stream-api.oitzerhanigunim.org`.
+The R2 bucket is bound as `env.BUCKET`, so there's nothing else to configure.
+The page already points at `https://stream-api.oitzerhanigunim.org`.
 
 Reload `/manage`, enter the PIN, and you can manage files.
 
