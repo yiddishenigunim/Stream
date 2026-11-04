@@ -18,6 +18,10 @@ repo (July–October 2026). Technical details of the worker live in
 - An **office speaker system** (a company's IT person, via the partner) plays
   the stations through **Music Assistant** — the reason `/radio` exists
   (2026-07-26).
+- **Music-on-hold requests** — offices write to the partner (music@koilos.org)
+  asking to use the nigunim on their office phone hold line; the partner
+  forwards them to the owner (first: satmarsem.org, 2026-11-04). See *Music on
+  hold* in `manage/STATIONS.md`.
 - **Cloudflare account** (Workers & Pages) holds, among others:
   `nigunim-api` (this repo's worker), `oitzer-api` (donations — not this),
   `hotline` (repo `yiddishenigunim/hotline`), `site` / `coda-proxy` (main site),
