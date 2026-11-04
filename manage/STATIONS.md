@@ -68,6 +68,30 @@ Notes:
 - `/playlist.m3u` ignores `gain` — it hands out direct R2 file URLs, which the
   worker never touches.
 
+## Music on hold (office phone systems)
+
+Asked for on 2026-11-04 (an office wanted the nigunim for its hold line). Two
+kinds of phone systems:
+
+- **Takes a stream URL** — 3CX, FreePBX / Asterisk, Yeastar and similar
+  self-hosted PBXes. Give them a `/radio` URL with `&gain=4.5` (phone audio is
+  narrow and quiet, same as the hotline). Instrumental suits hold best:
+
+  ```
+  https://stream-api.oitzerhanigunim.org/radio?station=music&gain=4.5
+  ```
+
+  Each caller on hold gets their own shuffle; the stream never ends, so the
+  system just keeps playing. Asterisk needs an MOH class with
+  `mode=custom` and an `application=` that pipes the URL through
+  `mpg123`/`ffmpeg` to 8 kHz mono.
+
+- **Upload only** — hosted lines (RingCentral, Grasshopper, Vonage, Ooma,
+  most carrier lines) only accept an uploaded MP3/WAV, usually a few MB.
+  A stream URL won't work there. For now: send them a few tracks from
+  `/playlist.m3u?station=music` (the lines are direct file URLs). A
+  ready-made, pre-loudened hold file is not built — see `docs/OPEN.md`.
+
 ## Notes
 
 - A station is one fixed folder. The website switches folders by day/time in
