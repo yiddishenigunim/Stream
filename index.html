@@ -907,6 +907,34 @@
             transform: scale(0.95);
         }
         
+        /* Repeat-one toggle (and an empty twin on the other side so play stays centered) */
+        .control-btn.repeat,
+        .control-spacer {
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+        }
+        .control-btn.repeat {
+            position: relative;
+            opacity: 0.45;
+        }
+        .control-btn.repeat.active {
+            opacity: 1;
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.12);
+        }
+        .control-btn.repeat.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            margin-left: -2px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+
         .control-btn.play {
             color: var(--gold-light);
             background: rgba(255, 255, 255, 0.03);
@@ -917,6 +945,7 @@
             position: relative;
             overflow: visible;
             z-index: 2;
+            flex-shrink: 0;
         }
         
         .control-btn.play:hover {
@@ -1265,6 +1294,9 @@
                 height: 55px;
                 font-size: 1.9em;
             }
+            .controls {
+                gap: 10px;
+            }
             .category-label {
                 font-size: 0.78em;
             }
@@ -1417,6 +1449,7 @@
                 </div>
 
                 <div class="controls">
+                    <span class="control-spacer" aria-hidden="true"></span>
                     <button class="control-btn" onclick="previousTrack()" aria-label="Previous Track">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                             <polygon points="19 20 9 12 19 4 19 20"></polygon>
@@ -1439,6 +1472,15 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                             <polygon points="5 4 15 12 5 20 5 4"></polygon>
                             <rect x="17" y="4" width="2" height="16" rx="0.5"></rect>
+                        </svg>
+                    </button>
+                    <button class="control-btn repeat" id="repeat-btn" onclick="toggleRepeat()" aria-label="Repeat" aria-pressed="false" title="שפיל דעם זעלבן ניגון נאכאמאל און נאכאמאל">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                            <path d="M11 10.5l1.5-1V15" stroke-width="1.8"></path>
                         </svg>
                     </button>
                 </div>
@@ -1565,6 +1607,13 @@
         },
         keyboardShortcut(key) {
             this._send('keyboard_shortcut', { key: key || '' });
+        },
+        repeatToggled(opts) {
+            this._send('repeat_toggled', {
+                category: opts.category || '',
+                track_name: opts.trackName || '',
+                enabled: !!opts.enabled
+            });
         },
 
         // ── Errors / reliability ───────────────────────────────────────
@@ -2165,13 +2214,36 @@
             playCurrentTrack();
         }
         
-        // Auto-play next track when current ends
+        // Repeat-one: when on, a finished nigun starts again instead of
+        // moving to the next one. Next/Prev still work. Off on every page load.
+        let repeatOne = false;
+        function toggleRepeat() {
+            repeatOne = !repeatOne;
+            const btn = document.getElementById('repeat-btn');
+            btn.classList.toggle('active', repeatOne);
+            btn.setAttribute('aria-pressed', repeatOne ? 'true' : 'false');
+            Analytics.repeatToggled({
+                category: currentCategory,
+                trackName: currentTrackName,
+                enabled: repeatOne
+            });
+        }
+
+        // Auto-play next track when current ends (or the same one, on repeat)
         audioPlayer.onended = () => {
             Analytics.songCompleted({
                 category: currentCategory,
                 trackName: currentTrackName,
                 durationSeconds: audioPlayer.duration
             });
+            if (repeatOne) {
+                _milestonesFired = {};
+                _skipLogged = false;
+                audioPlayer.currentTime = 0;
+                const p = audioPlayer.play();
+                if (p !== undefined) p.catch(() => { isPlaying = false; });
+                return;
+            }
             nextTrack('auto');
         };
         
@@ -2469,6 +2541,9 @@
                 e.preventDefault();
                 Analytics.keyboardShortcut('arrow_left');
                 previousTrack('keyboard');
+            } else if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                Analytics.keyboardShortcut('r');
+                toggleRepeat();
             }
         });
     </script>
