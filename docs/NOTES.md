@@ -59,8 +59,11 @@ repo (July–October 2026). Technical details of the worker live in
   run was done: `/list` shows `lufs` on files (checked 2026-10-27).
 - **2026-11-09 repeat button** — a listener (via the owner): "אן אפציע צו
   איבערהערן די זעלבע ניגון נאכאמאל און נאכאמאל, דורך א ריפיעט קנעפל". Built
-  as a repeat-one toggle right of ⏭ (key `R`), off on every page load; ⏭/⏮
-  still move on. GA4 event `repeat_toggled`. Website player only, not `/radio`.
+  as a repeat-one toggle (key `R`), off on every page load; ⏭/⏮ still move
+  on. First placed next to ⏭; owner: "מאך עס אונטן רעכטס, און קלענער. עס זאל
+  נישט שטיין אין וועג און שטערן פאר די וואס נוצן עס נישט" — now a small faint
+  icon in the player's bottom-right corner; keep it out of the main controls.
+  GA4 event `repeat_toggled`. Website player only, not `/radio`.
 
 ## Lessons (cost time before)
 
