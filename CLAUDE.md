@@ -13,12 +13,13 @@ there — check its history before reinventing.
 | --- | --- |
 | `index.html` | The whole public player (one file, no build). Folders: `FOLDERS`, Shabbos switching: `TIME_BASED_FOLDERS`. GA4 property of its own. |
 | `manage/index.html` | `/manage` admin page (PIN gate, upload/delete/play, *Even volume*). |
-| `manage/worker.js` | The **`nigunim-api`** Cloudflare Worker: `GET /?folder=` (the site's list call), management routes, `/radio`, `/playlist.m3u`, `/stations`. |
+| `manage/worker.js` | The **`nigunim-api`** Cloudflare Worker: `GET /?folder=` (the site's list call), management routes, `/radio`, `/playlist.m3u`, `/stations`, `POST /feedback`. |
 | `manage/README.md` | Full technical docs of `/manage`, the worker API, `/radio`, loudness. |
 | `manage/STATIONS.md` | Ready-to-paste station URLs. |
 | `wrangler.jsonc` | The ONLY worker config — read its comments before touching it. |
 | `docs/NOTES.md` | People, services, decisions, lessons, history from past chats. |
 | `docs/OPEN.md` | Open work and unanswered questions. |
+| `docs/MOVE.md` | Checklist for moving the site + R2 to the partner's own domain/account. |
 
 ## Build / deploy
 

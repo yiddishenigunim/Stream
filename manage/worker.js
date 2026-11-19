@@ -60,6 +60,15 @@ export default {
       return handleStream(managePath, request, env, ctx);
     }
 
+    // ───────────────────────────────────────────────────────────────
+    //  Feedback (הגהות און הערות) from the website → music@koilos.org.
+    //  Its own path and its own limiter, before the 60/min limiter and
+    //  the bot blocker. Never touches the `/?folder=` call.
+    // ───────────────────────────────────────────────────────────────
+    if (managePath === '/feedback') {
+      return handleFeedback(request, env, clientIP);
+    }
+
     if (request.method === 'OPTIONS') {
       console.log(`[${requestId}] CORS preflight - OK`);
       return new Response(null, { status: 204, headers: corsHeaders });
@@ -208,6 +217,104 @@ export default {
     }
   }
 };
+
+/* ═══════════════════════════════════════════════════════════════════
+   Feedback — POST /feedback  {text, name?, email?, website?, page?}
+   The website's "הגהות און הערות" form (the partner asked, 2026-11-19).
+   Mailed through Resend to FEEDBACK_TO. Needs the worker secret
+   RESEND_API_KEY (Cloudflare → nigunim-api → Settings → Variables and
+   Secrets); FEEDBACK_FROM must be on a domain verified in that Resend
+   account. Without the key it answers 503 {error:'not_configured'} and the
+   page falls back to the visitor's mail app — nothing breaks.
+   `website` is a honeypot: a bot that fills it gets a quiet {ok:true}.
+   Limit: 5 per IP per hour.
+   ═══════════════════════════════════════════════════════════════════ */
+
+const FEEDBACK_TO = 'music@koilos.org';
+const FEEDBACK_FROM = 'קולות סטרים <noreply@oitzerhanigunim.org>';
+const FEEDBACK_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400',
+};
+
+function fjson(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...FEEDBACK_CORS, 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
+function escHtml(str) {
+  return String(str).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+async function handleFeedback(request, env, clientIP) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: FEEDBACK_CORS });
+  if (request.method !== 'POST') return fjson({ error: 'method not allowed' }, 405);
+
+  let body;
+  try { body = await request.json(); } catch (_) { return fjson({ error: 'bad json' }, 400); }
+  if (!body || typeof body !== 'object') return fjson({ error: 'bad json' }, 400);
+
+  const text = String(body.text || '').trim().slice(0, 4000);
+  const name = String(body.name || '').trim().slice(0, 100);
+  const email = String(body.email || '').trim().slice(0, 200);
+  const page = String(body.page || '').slice(0, 300);
+  if (body.website) return fjson({ ok: true });          // honeypot
+  if (!text) return fjson({ error: 'empty' }, 400);
+
+  // 5 per hour per IP (same cache-counter trick as the limiter below).
+  const cache = caches.default;
+  const key = new Request(`https://ratelimit.local/feedback:${clientIP}`);
+  const hit = await cache.match(key);
+  const count = hit ? (parseInt(await hit.text()) || 0) : 0;
+  if (count >= 5) return fjson({ error: 'rate limited' }, 429);
+  await cache.put(key, new Response(String(count + 1), { headers: { 'Cache-Control': 'max-age=3600' } }));
+
+  if (!env.RESEND_API_KEY) return fjson({ error: 'not_configured' }, 503);
+
+  const emailOk = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(email);
+  const lines = [
+    text,
+    '',
+    '—',
+    name ? `נאמען: ${name}` : 'נאמען: (נישט געשריבן)',
+    email ? `אימעיל: ${email}` : 'אימעיל: (נישט געשריבן)',
+    page ? `בלאט: ${page}` : null,
+  ].filter(l => l !== null);
+  const html = `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6">`
+    + `<p style="white-space:pre-wrap;margin:0 0 16px">${escHtml(text)}</p>`
+    + `<p style="color:#666;font-size:13px;margin:0">— ${escHtml(name || '(נישט געשריבן)')}`
+    + `<br>${escHtml(email || '(קיין אימעיל)')}${page ? `<br>${escHtml(page)}` : ''}</p></div>`;
+
+  const msg = {
+    from: FEEDBACK_FROM,
+    to: [FEEDBACK_TO],
+    subject: 'הגהות און הערות פון דעם סטרים סייט' + (name ? ` — ${name}` : ''),
+    text: lines.join('\n'),
+    html,
+  };
+  if (emailOk) msg.reply_to = email;
+
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(msg),
+    });
+    if (!r.ok) {
+      console.log(`feedback: resend ${r.status} ${(await r.text()).slice(0, 200)}`);
+      return fjson({ error: 'send_failed' }, 502);
+    }
+  } catch (e) {
+    console.log(`feedback: resend error ${e && e.message}`);
+    return fjson({ error: 'send_failed' }, 502);
+  }
+  console.log(`feedback: sent (${text.length} chars, reply_to=${emailOk ? 'yes' : 'no'})`);
+  return fjson({ ok: true });
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    Management API — powers the /manage admin page.

@@ -1098,7 +1098,7 @@
         }
         
         .footer-logo {
-            height: 42px;
+            height: 54px;
             margin-top: 5px;
             filter: brightness(0) invert(1) sepia(100%) saturate(150%) hue-rotate(5deg) brightness(1.1);
             opacity: 0.85;
@@ -1114,6 +1114,174 @@
             font-size: 0.85em;
         }
         
+        /* ── קולות לאגא בעגראנט (the partner asked, 2026-11-19: "מאכן עפעס
+           א שיינע בעגראנט פון די 'קולות לאגא'"). A quiet gold pattern of
+           their logo behind everything, fainter in the middle so the
+           buttons stay clean. The tile is an SVG holding the footer logo
+           (100×74, the only copy we have) twice, staggered — at its own
+           size it stays sharp; a big watermark would need their original
+           file. */
+        .koilos-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbG5zOnhsaW5rPSdodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rJyB3aWR0aD0nMjYwJyBoZWlnaHQ9JzIwMCcgdmlld0JveD0nMCAwIDI2MCAyMDAnPjxkZWZzPjxpbWFnZSBpZD0naycgd2lkdGg9JzEwMCcgaGVpZ2h0PSc3NCcgeGxpbms6aHJlZj0nZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFHUUFBQUJLQ0FZQUFBQk5SUEVTQUFBSFFVbEVRVlI0MnUyZFdXd1ZWUmpIZjlPV2xoYUtiQTJJMWFJUUNVWkIwTGhnRkdKTTFCaVhJZ2FOUWRTNHhRVzNCOFVIbDZqUkZ4T1FSSVVnQWRFZ0duY0ZsUWMxYWhRcFVLR0FRTFFLaWdzZ0JJdEFsenMrbk84bXczak8zSm5ibWJsVE9OL0w3Wnc1OTJ6L2J6M25PN2RPeXp0bll5azdWR2FYd0FKaXlRSmlBYkZrQWJHQVdMS0FXRUFzV1VBc0lKWXNJSllzSUQyRUtucmdtQnVBNHpYbGU0RVdDMGo2ZERzd1UxUCtCVERKQXBJK0xRRldhOHAzVzVWVkdyck9JQ0dyZ0xNc0lPblRsMEF2SUNmUGpueHV0eElTLzFpYTVOUFJ2SGVCaDRFUndDV2E5ejhBY3l3ZzhWS2Raa3lPNTdNSzZBc00wWHgzcDVXUWVDa250c0V4dkhlQmpVQ3JRVDN0amRqZmhjQUpudjVjWDE5TndJYWpHWkF5WUw3WUJ4UGRKOUtoTStxYmdQY2o5SGN2Y0VYQSs0ZU9ka0M2Z0dzMFV1SGw0QmFnUmp5cW5JK3IyeUwyOXd5d1VDTWQrZWNOd2lUOUROSWFoZHFCQXozUnFMOVpRRUllQkFZYkpPUm40TVFJL2Mwc0lDRlBBeThEUDNWelhpN3dOakNsSjlxUTEwUWlYSTFSejl1UWZzQmllWFk5ZFhaRjdPOHpnOTNKOTk4TTdBY1dSVmg0MC9PYXBGV1dJeEZ6ZVl4Z1BBZFVCN1RweW5ncnBKN2ZDTmNEYnhqRzZxZEh4V09yTWFnZjF6T09tZ0JIQXdQeitOOVhwUUhJVlFiMVVtaUFHT3pFRXFCUnh1UWF2dnVOcUt6Sm1vVjBRdXI1SEhBSGNDNXdlY0I0dHdEZkFWY1hhTThKdVY2SkF1SUNOeGZSdVJzd3VkWEFUWVo2K1RhYmdkNml1bklSakswM2x0bUgydmVhSlRiTE5LWVdpVzF1Q0dBUURDNnpYLzF0VDBOQ0ZoWXd3RkZwc3VqcmlpS05lbGo2QVBnUXVMK0FVWDhLV0FDOEdzUGMzZ0srU2xwQzd2R29GMWZER1U2QWRPanFyNVUyeXp5cXhmVndweU1xcXhyNFZkNDdJU1RSTDJYNU01TzV3Q2Z5UHFlcHQwWWs2YzZRNmtqWFovNTlheG9xYTY1ME5oczQyYmM0WGNCVTRCL05kK2NDRXpUdGJRRmVrdWRIZ0d0OWJib2lrWE9BYjBPTThWbGdqRVo5ckpMblpmTDVoRWluZnp6enBPNkxFZFpsa2dTVWZoWDJ0WUNmdU50YkI5eHQ0TlJhQXlBTndLbWFjbThBTmd3NFRWTm5TQVNWZWdzd1NMUFF0L3JLNmczakdWTEVlZ3hGdi9GNU1NcDJSVkkwb0lReHpUQmdvS1o4RjdDRERGTjNBZWtJOEd6NmxuQmVZd3hTdTY2SWJZOWFVYUVmeVY3YkdVV3ErRlQyc3RvRE9rdGlGOENKQUlpT21pTzZ5ay9LL3Rvb1QvazBBV2VHT0JlWms1Q2M0VjJ2RWtySU9FUDU5eEhidWNBSEJrQ2xCTEM5eElqM3l4SWdYUUVjMXFlRWdKalVTbE9NRXZrQXNGekF5UXdnYmdBZ3RTVUM0eGpnSkUxNW03aldjWkFyN3UxdzRKV2VBa2hsaVFBWmJaalhScEhvdU9oNmljREh4cm1YbFNRZ3BVcFROZG1QdFRIMjBTRzdCaHVJZm5TY2VCeVN5eGdnNDJNeTZFRWUyRDVnTTdBVTJKWTFRRXhSYUhuR0FGa1hZeDgxcU5QRUZhSWlNd1hJL2d6WmtFckRBblVSNGRRdUJPMEJwcU95VnNJa1FqaHBBdElXVTZUdXhEQ1dVYWpkWUQ5dElXU1NRVVIzLzdlNDV4WUhJSWNNNWRVWk11anJZdTVuZjFMTUZnY2duVEdwTERlR3NZeE53Y1BLRy9WRUtBNUFPaEl3Nm03TUV0SWM4N3ExWjFsQ0RxWG85Z1lCVlc0QXhDMFNrS0FZNjFDV0FURzV2VldrUy9WQWYwMzVIOENmSlZaWnFRTHlyNkU4N2MzRjAxTlNWOFVZOVZ5YWdKajBhZStNQUxLNkcyMDZFUjJaYnR2RUpMMnN0Tk5VeDhRc0lVNFJjeTd2TGlBVkNVcEltbHNuRHZyN2hXNENMaSthSUxNTU9BVjFpcGc2SUNOUUtUYjVYS254Q1lBZE5Xb2ZoRXBzMEJuZlh4SUF4SnZZZlRFcXU3MG1vUDdmU1FKU1M3alUrcG9VSldTc1FmMnVKOTR6RUoyRVZCYVlxNHMrQ1R3Mkd4SlcvUG9uTEJWSjJvOUM4K3lJME01ODROTWtBUW5yd3FYcFphVVZvUmVLdmZ5MjlYRlVwbjFvcWtnUWtNb0VKTUgwM1RNVGNubE4vYlVGU05XUHdIdkFDeFJ4KzZvWVFIYWdMa3o2RjhrTkdjM09BZDcxVERpL1JlRTkwVnVLU29yMjFnbGE0TmsrYWM4blVJZjVNWnJGbm5hOWMya0N6Zyt4ZGJKT2JPcGZ3RmJaR1NpZUMxTDRxZkdhZ0dnK0RxcVV4ZTlNb08zUGdZbWE4a1pocXRncHp1QnRwS2lPNDFEbnpkV28vTnJKcVB0OG0wUnFCa3UvRFNJVlZhaWJTbE9FUXc5SXZkYzFmZHdtSE5pSlNzSHBSSjNhRFVXZDNHMFR6cjVFdUh5Z3FKQ1JNcWJocUFUd1hjQ3hxUHpqQmNEdkVlZmFsaFIzeGJrajJ3cGNKREZCR3lxanJ4RzRVdnp3T3RTdHBkR280OVRuWllGSGlRcXNGekMyY1hqeVdibFBHdG9GK0hHb2pJKzE4djBKcUFTNUd3V2tWdFRWaDhza1J0a3U4OTByUUo0SHJPVC9WN0hEMEo2ZUFFaVhUTHdkbFdiWmdibzNlQkE0UnpoN252eTlXZFJZcDNCeEYrcEhaVWFpN21SNFk0ZFpIcmUyQTNVdmNLVkkweWFSakFheEYzMUVXajVHblhrZmtIckxVSG00QTZUdEt1bC9EOEVubTNGdHY1ZEVaWGtqMGtiZ01kUWRQVWNtc0JPVkM3dENwR0t6R01MK3FBeU9xVkt2bnNPdkVzendMTXh1YVcraWdMSmV5cWNMQ0hmSkxzSTBzU3VOcUt0a3kyWGg4MERVb1JMbkxpM0E3VnRSbVpCZWdOd2tWWlp6QlAvL2tPbUV2Mk9lR1RxU2Z3UnpVVThjdFAxVlVndUlKUXVJQmNTU0JjUUNZc2tDWWdHeGxEYjlCK05mdlA3TE5qQjRBQUFBQUVsRlRrU3VRbUNDJy8+PC9kZWZzPjx1c2UgeGxpbms6aHJlZj0nI2snIHg9JzE1JyB5PScxMycvPjx1c2UgeGxpbms6aHJlZj0nI2snIHg9JzE0NScgeT0nMTEzJy8+PC9zdmc+");
+            background-size: 260px 200px;
+            background-position: center top;
+            opacity: 0.085;
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(0,0,0,0.35) 0%, #000 100%);
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(0,0,0,0.35) 0%, #000 100%);
+        }
+
+        /* ── "די סייט ווערט כסדר געאפדעיט" (partner, 2026-11-19); in the
+           footer above "פראיעקט דורך" — the owner: "לייג מער אונטן" ── */
+        .fresh-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0 14px !important;
+            padding: 5px 15px;
+            font-size: 0.88em;
+            color: var(--gold-light);
+            background: rgba(212, 175, 55, 0.07);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 999px;
+            letter-spacing: 0.3px;
+        }
+        .fresh-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #5ee08f;
+            box-shadow: 0 0 0 0 rgba(94, 224, 143, 0.6);
+            animation: freshPulse 2.4s infinite;
+            flex: none;
+        }
+        @keyframes freshPulse {
+            0% { box-shadow: 0 0 0 0 rgba(94, 224, 143, 0.55); }
+            70% { box-shadow: 0 0 0 7px rgba(94, 224, 143, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(94, 224, 143, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .fresh-dot { animation: none; }
+        }
+
+        /* ── הגהות און הערות צו דער רעדאקציע (partner, 2026-11-19) ── */
+        .fb-open {
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: var(--gold-light);
+            font-family: inherit;
+            font-size: 0.95em;
+            padding: 7px 18px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .fb-open:hover {
+            background: rgba(212, 175, 55, 0.16);
+            border-color: rgba(212, 175, 55, 0.55);
+        }
+        .fb-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(5, 12, 24, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .fb-overlay.open { display: flex; }
+        .fb-box {
+            position: relative;
+            width: 460px;
+            max-width: 100%;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            background: rgba(14, 29, 53, 0.92);
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            border-radius: 22px;
+            padding: 30px 28px 24px;
+            color: var(--cream);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.18);
+            text-align: right;
+        }
+        .fb-box h2 {
+            color: var(--gold-light);
+            font-size: 1.35em;
+            margin-bottom: 6px;
+        }
+        .fb-box .fb-sub {
+            font-size: 0.9em;
+            opacity: 0.75;
+            margin-bottom: 18px;
+        }
+        .fb-box label {
+            display: block;
+            font-size: 0.88em;
+            opacity: 0.85;
+            margin: 12px 0 5px;
+        }
+        .fb-box textarea,
+        .fb-box input[type=text],
+        .fb-box input[type=email] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            color: var(--cream);
+            font-family: inherit;
+            font-size: 1em;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .fb-box textarea { min-height: 130px; resize: vertical; line-height: 1.5; }
+        .fb-box input[type=email] { direction: ltr; text-align: left; }
+        .fb-box textarea:focus,
+        .fb-box input:focus { border-color: rgba(212, 175, 55, 0.6); }
+        .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+        .fb-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            align-items: center;
+        }
+        .fb-send {
+            padding: 11px 28px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: var(--navy-dark);
+            border: none;
+            border-radius: 25px;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .fb-send:disabled { opacity: 0.55; cursor: default; }
+        .fb-status { font-size: 0.9em; opacity: 0.9; }
+        .fb-status.err { color: #ff9a9a; }
+        .fb-close {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            background: none;
+            border: none;
+            color: var(--cream);
+            font-size: 1.25em;
+            cursor: pointer;
+            opacity: 0.6;
+            line-height: 1;
+            padding: 4px;
+        }
+        .fb-close:hover { opacity: 1; }
+        .fb-done { text-align: center; padding: 20px 0 8px; }
+        .fb-done .fb-check { font-size: 2.4em; color: #5ee08f; margin-bottom: 8px; }
+
         #error-overlay {
             position: fixed;
             top: 0;
@@ -1336,6 +1504,9 @@
     <div class="decoration">♩</div>
     <div class="decoration">♬</div>
     
+    <!-- קולות logo pattern -->
+    <div class="koilos-bg" aria-hidden="true"></div>
+
     <!-- Star field -->
     <div class="stars" id="stars"></div>
     
@@ -1503,11 +1674,41 @@
         </div>
         
         <footer class="site-footer">
+            <p class="fresh-note"><span class="fresh-dot" aria-hidden="true"></span>די סייט ווערט כסדר געאפדעיט מיט פרישע סחורה</p>
             <p>פראיעקט דורך <a href="https://oitzerhanigunim.org/" target="_blank">אוצר הניגונים</a></p>
             <p>געברענגט צו אייך דורך</p>
             <img src="data:image/webp;base64,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" alt="קולות" class="footer-logo">
-                      <p class="footer-email"><a href="mailto:music@koilos.org">music@koilos.org</a></p>
+            <p class="footer-email"><a href="mailto:music@koilos.org">music@koilos.org</a></p>
+            <p class="footer-feedback"><button type="button" class="fb-open" onclick="openFeedback()">✎ שרייבט הגהות און הערות צו דער רעדאקציע</button></p>
         </footer>
+    </div>
+
+    <!-- הגהות און הערות → music@koilos.org (via the worker's POST /feedback) -->
+    <div class="fb-overlay" id="fb-overlay" onclick="if (event.target === this) closeFeedback()">
+        <div class="fb-box" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+            <button type="button" class="fb-close" onclick="closeFeedback()" aria-label="פארמאך">✕</button>
+            <form id="fb-form" onsubmit="sendFeedback(event)">
+                <h2 id="fb-title">הגהות און הערות</h2>
+                <p class="fb-sub">שרייבט צו דער רעדאקציע פון קולות — א טעות אין א נאמען, א פארשלאג, אדער סתם א הערה.</p>
+                <label for="fb-text">וואס ווילט איר שרייבן?</label>
+                <textarea id="fb-text" maxlength="4000" required></textarea>
+                <label for="fb-name">נאמען (נישט נויטיג)</label>
+                <input type="text" id="fb-name" maxlength="100" autocomplete="name">
+                <label for="fb-email">אימעיל פאר א תשובה (נישט נויטיג)</label>
+                <input type="email" id="fb-email" maxlength="200" autocomplete="email">
+                <input type="text" id="fb-website" class="fb-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <div class="fb-actions">
+                    <button type="submit" class="fb-send" id="fb-send">שיק</button>
+                    <span class="fb-status" id="fb-status" role="status"></span>
+                </div>
+            </form>
+            <div class="fb-done" id="fb-done" hidden>
+                <div class="fb-check">✓</div>
+                <h2>א שיינעם דאנק!</h2>
+                <p class="fb-sub">עס איז אנגעקומען צו דער רעדאקציע.</p>
+                <button type="button" class="fb-send" onclick="closeFeedback()">פארמאך</button>
+            </div>
+        </div>
     </div>
 
     <!-- ───────────────────────────────────────────────────────────────
@@ -1607,6 +1808,13 @@
         },
         keyboardShortcut(key) {
             this._send('keyboard_shortcut', { key: key || '' });
+        },
+        feedbackSent(opts) {
+            this._send('feedback_sent', {
+                method: opts.method || 'api',          // api / mailto
+                has_email: !!opts.hasEmail,
+                length: opts.length || 0
+            });
         },
         repeatToggled(opts) {
             this._send('repeat_toggled', {
@@ -2522,9 +2730,81 @@
             return mins + ':' + (secs < 10 ? '0' : '') + secs;
         }
 
+        // ── הגהות און הערות → music@koilos.org ─────────────────────────
+        // POST {API_URL}/feedback; the worker mails it to the partner. If the
+        // worker can't send (no mail key set yet, or it's down), fall back to
+        // the visitor's own mail app with the text already filled in, so a
+        // note is never lost.
+        const FEEDBACK_TO = 'music@koilos.org';
+        let fbLastFocus = null;
+
+        function openFeedback() {
+            fbLastFocus = document.activeElement;
+            document.getElementById('fb-form').hidden = false;
+            document.getElementById('fb-done').hidden = true;
+            setFbStatus('');
+            document.getElementById('fb-overlay').classList.add('open');
+            setTimeout(() => document.getElementById('fb-text').focus(), 30);
+        }
+
+        function closeFeedback() {
+            document.getElementById('fb-overlay').classList.remove('open');
+            if (fbLastFocus && fbLastFocus.focus) fbLastFocus.focus();
+        }
+
+        function setFbStatus(msg, isErr) {
+            const el = document.getElementById('fb-status');
+            el.textContent = msg;
+            el.classList.toggle('err', !!isErr);
+        }
+
+        async function sendFeedback(e) {
+            e.preventDefault();
+            const text = document.getElementById('fb-text').value.trim();
+            const name = document.getElementById('fb-name').value.trim();
+            const email = document.getElementById('fb-email').value.trim();
+            const website = document.getElementById('fb-website').value;
+            if (!text) { setFbStatus('שרייבט ביטע עפעס.', true); return; }
+            const btn = document.getElementById('fb-send');
+            btn.disabled = true;
+            setFbStatus('שיקט...');
+            let sent = false;
+            try {
+                const r = await fetch(`${API_URL}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, name, email, website, page: location.href })
+                });
+                const j = await r.json().catch(() => ({}));
+                if (r.ok && j.ok) sent = true;
+                else if (r.status === 429) {
+                    setFbStatus('צופיל מאל געשיקט. פרובירט שפעטער.', true);
+                    btn.disabled = false;
+                    return;
+                }
+            } catch (_) { /* fall through to mailto */ }
+            btn.disabled = false;
+            if (sent) {
+                Analytics.feedbackSent({ method: 'api', hasEmail: !!email, length: text.length });
+                document.getElementById('fb-form').reset();
+                document.getElementById('fb-form').hidden = true;
+                document.getElementById('fb-done').hidden = false;
+                return;
+            }
+            // Fallback: the visitor's mail app.
+            const body = text + (name ? `\n\n— ${name}` : '');
+            Analytics.feedbackSent({ method: 'mailto', hasEmail: !!email, length: text.length });
+            location.href = `mailto:${FEEDBACK_TO}?subject=${encodeURIComponent('הגהות און הערות — סטרים')}&body=${encodeURIComponent(body)}`;
+            setFbStatus('מען עפנט אייער אימעיל — דריקט דארט "שיק".');
+        }
+
         // Keyboard shortcuts
         window.addEventListener('keydown', (e) => {
             // Skip if user is typing in an input field (just in case)
+            if (document.getElementById('fb-overlay').classList.contains('open')) {
+                if (e.key === 'Escape') closeFeedback();
+                return;
+            }
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
             }

@@ -273,3 +273,23 @@ playlist you can skip through; `/radio` is the one that behaves like a station.
   weekday and שבת folders as two stations if that matters.
 - `/playlist.m3u` costs no worker bandwidth — it points at the public R2
   hostname the site already streams from.
+
+## Feedback — `POST /feedback` (the website's "הגהות און הערות")
+
+Added 2026-11-19 at the partner's request. The website's footer button opens a
+small form; the page posts `{ text, name?, email?, website?, page? }` to
+`/feedback`, and the worker mails it to **`music@koilos.org`** through Resend
+(`FEEDBACK_TO` / `FEEDBACK_FROM` at the top of the feedback block in
+`worker.js`).
+
+- Needs the worker **secret `RESEND_API_KEY`** (Cloudflare → Workers & Pages →
+  `nigunim-api` → Settings → Variables and Secrets → add, type *Secret*).
+  Secrets survive the Workers Builds deploys. `FEEDBACK_FROM` must be on a
+  domain verified in that Resend account (`noreply@oitzerhanigunim.org` is
+  the one the main site already sends from).
+- Without the key the route answers `503 {error:"not_configured"}` and the page
+  opens the visitor's own mail app with the text filled in — nothing breaks.
+- `email`, when valid, becomes the mail's `reply_to`, so the partner just hits
+  *Reply*. `website` is a hidden honeypot. 5 messages per IP per hour.
+- Handled up front like `/radio`, before the 60/min limiter and the bot
+  blocker; the `/?folder=` call never enters it.
