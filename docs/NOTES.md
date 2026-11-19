@@ -64,6 +64,22 @@ repo (July–October 2026). Technical details of the worker live in
   נישט שטיין אין וועג און שטערן פאר די וואס נוצן עס נישט" — now a small faint
   icon in the player's bottom-right corner; keep it out of the main controls.
   GA4 event `repeat_toggled`. Website player only, not `/radio`.
+- **2026-11-19 three small things from the partner** (their e-mail "אפדעיטן
+  סטרימינג וועבסייד, אויב שייך 3 קליינעקייטן", forwarded by the owner):
+  (1) the line "די סייט ווערט כסדר געאפדעיט מיט פרישע סחורה" — a small pill
+  with a green pulse; first under the subtitle, then the owner: "לייג מער
+  אונטן, העכער פראדזשעקט דורך" — now in the footer above "פראיעקט דורך"; (2) "א אפשן אז מ'זאל קענען
+  שרייבן הגהות והערות צו די רעדאקציע … music@koilos.org (נאר אויב ס'איז נישט
+  קיין שווערע זאך)" — footer button → form → worker `POST /feedback` → Resend;
+  falls back to a `mailto:` until the `RESEND_API_KEY` secret is set; (3) "א
+  שיינע בעגראנט פון די 'קולות לאגא' (יעצט איז אונזער לאגא אביסל באזייטיגט)"
+  — a faint gold tiled pattern of their logo (`.koilos-bg`) and a larger footer
+  logo. The only logo we have is the 100×74 webp in the footer; a big sharp
+  watermark needs their original file (asked, see OPEN).
+- **2026-11-19 moving to the partner's own domain / R2 account** — after a
+  long talk with Koilos the owner is thinking of moving the whole stream site
+  to their own domain and their own R2 (and Cloudflare/GitHub). Not decided.
+  The checklist of what is needed is `docs/MOVE.md`.
 
 ## Lessons (cost time before)
 

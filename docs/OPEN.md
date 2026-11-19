@@ -1,6 +1,6 @@
 # Open work
 
-Last checked 2026-10-27. Remove an item when it is done.
+Last checked 2026-11-19. Remove an item when it is done.
 
 - **Hotline URLs with `&gain=4.5`?** (since 2026-08-19) Claude asked whether to
   append `&gain=4.5` to the station URLs in the Tel Tech portal; no answer in
@@ -14,3 +14,13 @@ Last checked 2026-10-27. Remove an item when it is done.
   the code but is not wired into the page. Not requested by the owner.
 - **Live broadcast for the hotline** — only if the partner wants every caller
   to hear the same track (Icecast/AzuraCast). Not requested.
+- **`RESEND_API_KEY` on `nigunim-api`** (since 2026-11-19) — the feedback
+  form mails only after this secret is added in the Cloudflare dashboard;
+  until then it opens the visitor's mail app. Ask the owner whether it was
+  added (the main site's Resend key works; name only, never the value).
+- **The partner's original logo file** (since 2026-11-19) — for a big, sharp
+  logo background we need an SVG or a large PNG from Koilos.
+- **Move to the partner's own domain / R2?** (since 2026-11-19) — the owner is
+  considering it; `docs/MOVE.md` lists what is needed. Waiting on: which
+  domain (e.g. `stream.koilos.org`), whether they get their own Cloudflare
+  account and GitHub repo, and who keeps maintaining it.
