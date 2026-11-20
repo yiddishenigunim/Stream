@@ -37,8 +37,9 @@ there — check its history before reinventing.
 
 - The owner writes in Yiddish; answer in Yiddish, in Hebrew letters, short and
   plain.
-- Work on a `claude/...` branch and open a PR. Past practice: Claude merges
-  only when the owner says so ("מערדזש", "פולל און מערדזש").
+- Work on a `claude/...` branch, open a PR, and **merge it right away** —
+  owner (2026-11-20): "מערדזש אלעמאל גלייך". Test before pushing (see
+  above), since a merge to `main` is live at once.
 - `/manage`: no hint for the PIN on the page — owner: "לייג נישט קיין הינט!".
   Files only — no creating/deleting folders, no copy/cut/paste in the UI.
   The part copied from the main page stays Yiddish; the file tools are English.
