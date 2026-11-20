@@ -21,6 +21,8 @@ Last checked 2026-11-19. Remove an item when it is done.
 - **The partner's original logo file** (since 2026-11-19) — for a big, sharp
   logo background we need an SVG or a large PNG from Koilos.
 - **Move to the partner's own domain / R2?** (since 2026-11-19) — the owner is
-  considering it; `docs/MOVE.md` lists what is needed. Waiting on: which
-  domain (e.g. `stream.koilos.org`), whether they get their own Cloudflare
-  account and GitHub repo, and who keeps maintaining it.
+  considering it; `docs/MOVE.md` lists what is needed. Domain is at
+  Squarespace (2026-11-20); next step is a call with the partner's office to
+  switch nameservers to a Cloudflare account the owner sets up. Still open:
+  the exact hostname (e.g. `stream.koilos.org`), GitHub repo ownership, and
+  who keeps maintaining it.
