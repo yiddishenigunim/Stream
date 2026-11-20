@@ -6,6 +6,28 @@ partner's own domain, and to move the R2 files to the partner's own account.
 **Not decided yet** — see `docs/OPEN.md`. Example names below use
 `stream.koilos.org`; replace with whatever they pick.
 
+## koilos.org today (public DNS, checked 2026-11-20)
+
+- Registered at **Squarespace** (ex-Google Domains; nameservers
+  `ns-cloud-a1…a4.googledomains.com`).
+- **DNSSEC is on** (a DS record exists). Turn DNSSEC **off** at Squarespace
+  and wait for the DS to disappear *before* switching nameservers to
+  Cloudflare, or the whole domain — mail included — stops resolving.
+- **Mail = Google Workspace**: MX `aspmx.l.google.com` (1), `alt1/alt2` (5),
+  `alt3/alt4` (10); SPF TXT `v=spf1 include:_spf.google.com ~all`; DKIM TXT at
+  `google._domainkey`. Cloudflare's import usually misses the DKIM name —
+  check it is there, all MX/TXT set to *DNS only*.
+- **Website = Squarespace**: apex A `198.49.23.144/145`,
+  `198.185.159.144/145`; `www` CNAME `ext-sq.squarespace.com`. Keep them
+  *DNS only* (grey cloud) so Squarespace keeps serving its site and cert.
+- No `stream.` record yet.
+
+Plan the owner chose (2026-11-19): he sets up a Cloudflare account for
+them, adds `koilos.org` (free plan), checks the imported records against the
+list above, and on a call the partner's office changes the nameservers in
+Squarespace (Domains → koilos.org → DNS → Nameservers → custom) to the two
+Cloudflare gives. The registration can stay at Squarespace.
+
 ## What the partner has to bring
 
 1. **The hostname** — e.g. `stream.koilos.org` for the site, plus two helper

@@ -80,6 +80,14 @@ repo (July–October 2026). Technical details of the worker live in
   long talk with Koilos the owner is thinking of moving the whole stream site
   to their own domain and their own R2 (and Cloudflare/GitHub). Not decided.
   The checklist of what is needed is `docs/MOVE.md`.
+  2026-11-18/19 e-mail thread: the owner wrote them "איך דארף נאר אז די
+  דאמעין זאל מען אריבעררוקן צו א קלאודפלער אקאונט וואס איך גיי אייך
+  אויפסעטן" — i.e. the owner sets up the Cloudflare account for them.
+  **Office | Koilos** (`info@koilos.org`, Yoel Moskowitz) answered that the
+  domain is at **Squarespace** and asked the owner to call him (number in the
+  owner's mail, not here). The partner thanked for the three changes
+  ("א גרויסן יישר כח פארן אזוי שיין מסדר זיין … מיט אלעס וואס מיר האבן
+  געבעטן").
 
 ## Lessons (cost time before)
 
