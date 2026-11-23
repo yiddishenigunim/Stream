@@ -31,8 +31,11 @@ Last checked 2026-11-19. Remove an item when it is done.
   (a user token of the owner's login, a member of "Info@koilos.org's
   Account"). After the owner widened it (2026-11-23) it reads and edits DNS
   on `koilos.org` (and our zones); R2 and the workers subdomain in the Koilos
-  account still answer "Authentication error" (R2 permission not on that
-  account, or R2 not enabled there yet — step 5). Zone `koilos.org` is
+  account still answer "Authentication error". Cause found 2026-11-23: the
+  owner's membership there is scoped to the domain `koilos.org` only, role
+  Domain Administrator (+ Domain DNS) — no account-wide R2/Workers, and a
+  token can never exceed the member's role. Yoel must change it to the whole
+  account, Super Administrator. Zone `koilos.org` is
   **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com` /
   `ken.ns.cloudflare.com`. DNS check 2026-11-23: all 5 Google MX, SPF and
   DKIM (matches the public one) are there, DNS only. The 4 apex A records,
