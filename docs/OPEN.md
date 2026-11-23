@@ -28,14 +28,13 @@ Last checked 2026-11-19. Remove an item when it is done.
   public RDAP shows DNSSEC already off at the registry, nameservers still
   Squarespace (`ns-cloud-a*.googledomains.com`) — step 7 (switch to the
   Cloudflare nameservers) not done yet. The session env has `OITZER_CF_API_TOKEN`
-  (a user token of the owner's login, which is now a member of
-  "Info@koilos.org's Account"). Checked 2026-11-23: zone `koilos.org` exists
-  there, status **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com`
-  / `ken.ns.cloudflare.com`. In the Koilos account the token can only read
-  the account and list Workers scripts — **no** DNS (it has no DNS on our own
-  zones either), **no** R2, no members/billing/Pages. To work there the owner
-  edits that token: add the Koilos account and the `koilos.org` zone as
-  resources, with Workers R2 Storage Edit, Workers Scripts Edit, Zone DNS
-  Edit, Zone Workers Routes Edit, Zone Read. Still open:
-  the exact hostname (e.g. `stream.koilos.org`), GitHub repo ownership, and
-  who keeps maintaining it.
+  (a user token of the owner's login, a member of "Info@koilos.org's
+  Account"). After the owner widened it (2026-11-23) it reads DNS (edit not tried yet)
+  on `koilos.org` (and our zones); R2 and the workers subdomain in the Koilos
+  account still answer "Authentication error" (R2 permission not on that
+  account, or R2 not enabled there yet — step 5). Zone `koilos.org` is
+  **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com` /
+  `ken.ns.cloudflare.com`. DNS check 2026-11-23: all 5 Google MX, SPF and
+  DKIM (matches the public one) are there, DNS only. The 4 apex A records,
+  `www` and `_domainconnect` (Squarespace) are still **Proxied** — switch them
+  to DNS only before the nameservers move (asked the owner).
