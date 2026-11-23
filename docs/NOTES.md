@@ -88,6 +88,12 @@ repo (July–October 2026). Technical details of the worker live in
   owner's mail, not here). The partner thanked for the three changes
   ("א גרויסן יישר כח פארן אזוי שיין מסדר זיין … מיט אלעס וואס מיר האבן
   געבעטן").
+  2026-11-23 the owner changed the plan: "איך וויל יואל זאל עפענען אן
+  אייגענע אקאונט ביי קלאוד פלעיר, און אלעס וואס ער קען זאל ער טון, און נאר
+  וואס ער קען נישט, ווען ער איז פינישט זאל איך אלעס טון" — Yoel opens the
+  Cloudflare account himself (their card), adds koilos.org, turns DNSSEC off
+  and switches the nameservers at Squarespace, and invites the owner as
+  Super Administrator; the owner does everything technical after that.
 
 ## Lessons (cost time before)
 
