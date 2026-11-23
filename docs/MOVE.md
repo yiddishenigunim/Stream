@@ -22,8 +22,13 @@ partner's own domain, and to move the R2 files to the partner's own account.
   *DNS only* (grey cloud) so Squarespace keeps serving its site and cert.
 - No `stream.` record yet.
 
-Plan the owner chose (2026-11-19): he sets up a Cloudflare account for
-them, adds `koilos.org` (free plan), checks the imported records against the
+**Plan changed 2026-11-23:** Yoel (Office | Koilos) opens the Cloudflare
+account himself with their card, adds `koilos.org` (free plan, quick scan),
+checks the records above (DKIM added by hand if missing, Squarespace A/`www`
+set to DNS only), turns DNSSEC off in Squarespace, waits a day, switches the
+nameservers, and invites the owner as Super Administrator. Then the owner
+does the rest of this file. Earlier plan (2026-11-19): the owner sets up a
+Cloudflare account for them, adds `koilos.org` (free plan), checks the imported records against the
 list above, and on a call the partner's office changes the nameservers in
 Squarespace (Domains → koilos.org → DNS → Nameservers → custom) to the two
 Cloudflare gives. The registration can stay at Squarespace.
