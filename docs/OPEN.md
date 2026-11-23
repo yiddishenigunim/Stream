@@ -29,12 +29,13 @@ Last checked 2026-11-19. Remove an item when it is done.
   Squarespace (`ns-cloud-a*.googledomains.com`) — step 7 (switch to the
   Cloudflare nameservers) not done yet. The session env has `OITZER_CF_API_TOKEN`
   (a user token of the owner's login, a member of "Info@koilos.org's
-  Account"). After the owner widened it (2026-11-23) it reads DNS (edit not tried yet)
+  Account"). After the owner widened it (2026-11-23) it reads and edits DNS
   on `koilos.org` (and our zones); R2 and the workers subdomain in the Koilos
   account still answer "Authentication error" (R2 permission not on that
   account, or R2 not enabled there yet — step 5). Zone `koilos.org` is
   **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com` /
   `ken.ns.cloudflare.com`. DNS check 2026-11-23: all 5 Google MX, SPF and
   DKIM (matches the public one) are there, DNS only. The 4 apex A records,
-  `www` and `_domainconnect` (Squarespace) are still **Proxied** — switch them
-  to DNS only before the nameservers move (asked the owner).
+  `www` and `_domainconnect` (Squarespace) were Proxied; switched to DNS
+  only by Claude on the owner's "יא, טויש" (2026-11-23). All 13 records are
+  now DNS only — the zone is ready for step 7.
