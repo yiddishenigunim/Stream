@@ -27,8 +27,15 @@ Last checked 2026-11-19. Remove an item when it is done.
   owner). 2026-11-23: the owner has access to their Cloudflare account;
   public RDAP shows DNSSEC already off at the registry, nameservers still
   Squarespace (`ns-cloud-a*.googledomains.com`) — step 7 (switch to the
-  Cloudflare nameservers) not done yet. Claude has no Cloudflare token for
-  that account; to work in it, the owner adds one to the session's
-  environment (`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`, never in chat). Still open:
+  Cloudflare nameservers) not done yet. The session env has `OITZER_CF_API_TOKEN`
+  (a user token of the owner's login, which is now a member of
+  "Info@koilos.org's Account"). Checked 2026-11-23: zone `koilos.org` exists
+  there, status **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com`
+  / `ken.ns.cloudflare.com`. In the Koilos account the token can only read
+  the account and list Workers scripts — **no** DNS (it has no DNS on our own
+  zones either), **no** R2, no members/billing/Pages. To work there the owner
+  edits that token: add the Koilos account and the `koilos.org` zone as
+  resources, with Workers R2 Storage Edit, Workers Scripts Edit, Zone DNS
+  Edit, Zone Workers Routes Edit, Zone Read. Still open:
   the exact hostname (e.g. `stream.koilos.org`), GitHub repo ownership, and
   who keeps maintaining it.
