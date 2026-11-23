@@ -24,6 +24,11 @@ Last checked 2026-11-19. Remove an item when it is done.
   considering it; `docs/MOVE.md` lists what is needed. Domain is at
   Squarespace (2026-11-20); since 2026-11-23 Yoel (their office) opens his own
   Cloudflare account and switches the nameservers himself (steps sent by the
-  owner); waiting for him to finish and invite the owner. Still open:
+  owner). 2026-11-23: the owner has access to their Cloudflare account;
+  public RDAP shows DNSSEC already off at the registry, nameservers still
+  Squarespace (`ns-cloud-a*.googledomains.com`) — step 7 (switch to the
+  Cloudflare nameservers) not done yet. Claude has no Cloudflare token for
+  that account; to work in it, the owner adds one to the session's
+  environment (`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`, never in chat). Still open:
   the exact hostname (e.g. `stream.koilos.org`), GitHub repo ownership, and
   who keeps maintaining it.
