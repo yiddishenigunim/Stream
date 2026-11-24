@@ -47,12 +47,22 @@ Last checked 2026-11-19. Remove an item when it is done.
   not connected yet — no repo of theirs yet). Tested: same 775 files for
   שיינע מארשן as the old API, `/stations`, `/feedback`, `/radio` streams, and
   the clean site (local copy) plays from `r2.koilos.org` with requests only to
-  koilos hosts. Free Workers plan for now. Still to do, in order: (1) owner
+  koilos hosts. Free Workers plan for now.
+  **koilos.org itself is the stream since 2026-11-24** (owner: "מאך אז דאס
+  זאל זיין די סטרים"): its Squarespace "Coming Soon" A records and the `www`
+  CNAME were removed (values listed under "koilos.org today" in MOVE.md; mail
+  records untouched) and koilos.org + www.koilos.org are custom domains of a
+  static-assets Worker `koilos-site` in their account, uploaded by
+  `tools/deploy-koilos-site.py` (only index.html and manage/index.html are
+  public). Live-tested on desktop and phone: plays from `r2.koilos.org`, no
+  "אוצר הניגונים", `/manage/` shows the PIN gate. The clean repo now has
+  CNAME `koilos.org`. When their GitHub repo exists, either connect Workers
+  Builds to it for `koilos-site` too, or move the site to GitHub Pages. Still to do, in order: (1) owner
   creates an empty public repo in our org, Claude pushes the clean commit
   (`--no-credit`); (2) Yoel opens a GitHub account; (3) owner transfers the
   repo to him; (4) GitHub Pages on it + DNS `stream` CNAME → their
   `github.io`; connect Workers Builds in their account to the repo; (5) final
-  `tools/r2copy.py copy`; (6) redirects on our zone: `stream.`,
+  `tools/r2copy.py copy`; (6) redirects on our zone: `stream.` → `https://koilos.org`,
   `stream-api.` (path+query kept, 308 for POST) and `r2.oitzerhanigunim.org`
   → the koilos names; Yoel updates Tel Tech 2‑5‑6 and the speakers anyway;
   (7) weeks later, with the owner's OK: delete our worker routes/bucket,
