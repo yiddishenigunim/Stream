@@ -97,6 +97,17 @@ R2 has no "move bucket to another account". Copy it:
 4. Keys stay the same (folder/file names), so nothing in the code changes for
    the files except the public hostname.
 
+### How it was actually done (2026-11-24)
+
+No rclone in the container (downloading a binary was blocked), so
+`tools/r2copy.py` does it with the standard library over R2's S3 API. It uses
+one **user** API token that has R2 on both accounts; S3 credentials are
+derived from it (Access Key ID = the token's id, Secret = SHA-256 of the
+token value). It copies Content-Type and every `x-amz-meta-*` (= the worker's
+`customMetadata`: `lufs`, `peak`), skips files already there with the same
+size, and `verify` compares the lists and spot-checks metadata. 12 parallel
+transfers moved 21 GB in about an hour.
+
 ## The switch, in order (no downtime)
 
 1. Their zone active on Cloudflare; bucket copied; worker deployed in their
