@@ -95,6 +95,15 @@ repo (July–October 2026). Technical details of the worker live in
   and switches the nameservers at Squarespace, and invites the owner as
   Super Administrator; the owner does everything technical after that.
 
+- **2026-11-24 the final goal of the move** — owner: "איך וויל אלעס
+  אריבערלייגן צו זיי … די גיט האב, אלע, די סייט, און די אינפארמאציע, אלעס
+  זאל ליגן ביי זיי … איך זאל שוין נישט דארפן זיך פארלענען מיט דעם, עס זאל
+  גארנישט האבן מער מיט אוצר הניגונים. נאר די איין זאך, אז די אלטע לינק זאל
+  רידוירעקטן צו זיי". So: their Cloudflare, their R2, their GitHub repo
+  (clean, built with `--no-credit` — no "אוצר הניגונים" credit), their
+  domain; on our side only redirects from the old hostnames; afterwards our
+  worker, bucket and this repo are retired.
+
 ## Lessons (cost time before)
 
 - **Two wrangler configs = outage (2026-07-27).** Cloudflare autoconfig added
