@@ -34,8 +34,10 @@ Last checked 2026-11-19. Remove an item when it is done.
   account still answer "Authentication error". Cause found 2026-11-23: the
   owner's membership there is scoped to the domain `koilos.org` only, role
   Domain Administrator (+ Domain DNS) — no account-wide R2/Workers, and a
-  token can never exceed the member's role. Yoel must change it to the whole
-  account, Super Administrator. Zone `koilos.org` is
+  token can never exceed the member's role. Yoel changed it (2026-11-24) — now
+  R2 works there (no buckets yet), members/workers readable; no workers.dev
+  subdomain yet (opening Workers & Pages once creates it). Zone still
+  pending: registry nameservers still Squarespace's (step 7 not done). Zone `koilos.org` is
   **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com` /
   `ken.ns.cloudflare.com`. DNS check 2026-11-23: all 5 Google MX, SPF and
   DKIM (matches the public one) are there, DNS only. The 4 apex A records,
