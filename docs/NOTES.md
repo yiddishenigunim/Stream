@@ -104,6 +104,15 @@ repo (July–October 2026). Technical details of the worker live in
   domain; on our side only redirects from the old hostnames; afterwards our
   worker, bucket and this repo are retired.
 
+- **2026-11-24 their repo stays private** — owner: "איך וויל עס האלטן
+  פרייוועט, אפילו ס'גייט זיי קאסטן געלט … ס'איז אריין צופיל ארבעט דא". It
+  costs nothing: private repos are free on GitHub, and the site is served by
+  Cloudflare (Worker `koilos-site`), not GitHub Pages. The clean repo holds
+  two Workers for Workers Builds: `api/` (nigunim-api) and `site/`
+  (koilos-site). Plan: Yoel opens a free GitHub account + a free organization
+  and makes the owner an Owner of it, so the owner (and Claude) can do the
+  rest without him.
+
 ## Lessons (cost time before)
 
 - **Two wrangler configs = outage (2026-07-27).** Cloudflare autoconfig added

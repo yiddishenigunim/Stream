@@ -53,6 +53,29 @@ def cut_between(text, start, end, repl, path):
     return text[:i] + repl + text[j + len(end):]
 
 
+def relayout(files):
+    """Their repo holds two Workers, each with its own folder for Workers
+    Builds (root directory api/ or site/): the API worker and the static
+    site worker. The site is hosted by Cloudflare, so a private repo costs
+    nothing (no GitHub Pages)."""
+    move = {'manage/worker.js': 'api/worker.js', 'wrangler.jsonc': 'api/wrangler.jsonc',
+            'index.html': 'site/index.html', 'manage/index.html': 'site/manage/index.html',
+            'manage/README.md': 'docs/MANAGE.md', 'manage/STATIONS.md': 'docs/STATIONS.md'}
+    out = {move.get(k, k): v for k, v in files.items()}
+    w = out['api/wrangler.jsonc']
+    w = edit(w, '"main": "manage/worker.js"', '"main": "worker.js"', path='api/wrangler.jsonc')
+    out['api/wrangler.jsonc'] = w.replace('manage/worker.js', 'worker.js')
+    m = out['docs/MANAGE.md']
+    m = edit(m, '(GitHub Pages serves `manage/index.html` there).',
+             '(the `koilos-site` Worker serves `site/manage/index.html` there).', path='docs/MANAGE.md')
+    m = m.replace('`manage/worker.js`', '`api/worker.js`').replace('`manage/index.html`', '`site/manage/index.html`')
+    out['docs/MANAGE.md'] = m.replace('(config: `wrangler.jsonc`)', '(config: `api/wrangler.jsonc`)')
+    out['site/manage/index.html'] = out['site/manage/index.html'].replace('See manage/worker.js', 'See api/worker.js')
+    out['site/wrangler.jsonc'] = SITE_WRANGLER.format(site=KOILOS_SITE)
+    out['site/.assetsignore'] = 'wrangler.jsonc\n.assetsignore\n'
+    return out
+
+
 def build(out, no_credit):
     if os.path.exists(out):
         sys.exit(f'{out} exists — pick a new directory')
@@ -102,7 +125,6 @@ def build(out, no_credit):
     p = 'manage/STATIONS.md'
     files[p] = edit(files[p], 'stream-api.oitzerhanigunim.org', KOILOS_API, count=0, path=p)
 
-    files['CNAME'] = KOILOS_SITE + '\n'
     files['README.md'] = README.format(site=KOILOS_SITE, api=KOILOS_API, r2=KOILOS_R2)
 
     bad = []
@@ -116,6 +138,7 @@ def build(out, no_credit):
         shutil.rmtree(out)
         sys.exit('left-over ties to us:\n' + '\n'.join(bad))
 
+    files = relayout(files)
     for path, text in files.items():
         full = os.path.join(out, path)
         os.makedirs(os.path.dirname(full), exist_ok=True)
@@ -131,6 +154,25 @@ def build(out, no_credit):
     print(f'built {out}: {len(files)} files, one commit by {AUTHOR}')
 
 
+SITE_WRANGLER = """// The website: a Worker with static assets only (no script). Workers Builds
+// deploys it from this folder (root directory: site). Only the pages in this
+// folder are public; .assetsignore keeps this file out.
+{{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "koilos-site",
+  "compatibility_date": "2025-01-01",
+  "assets": {{
+    "directory": ".",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  }},
+  "routes": [
+    {{ "pattern": "{site}", "custom_domain": true }},
+    {{ "pattern": "www.{site}", "custom_domain": true }}
+  ]
+}}
+"""
+
 README = '''# קולות סטרים
 
 The Koilos streaming site: **https://{site}** — a Yiddish web player that
@@ -141,25 +183,29 @@ plays nigunim from Cloudflare R2, plus `/manage` (upload and delete files) and
 
 | Path | What |
 | --- | --- |
-| `index.html` | The whole public player (one file, no build). |
-| `manage/index.html` | `/manage` — the admin page for the files. |
-| `manage/worker.js` | The Cloudflare Worker (`{api}`): the site's file list (`GET /?folder=`), the `/manage` routes, `/radio`, `/playlist.m3u`, `/stations`, `POST /feedback`. |
-| `manage/README.md` | Technical details of `/manage`, the worker, `/radio`, even volume. |
-| `manage/STATIONS.md` | Ready-to-paste station URLs. |
-| `wrangler.jsonc` | The worker's config — read its comments before changing it. |
+| `site/index.html` | The whole public player (one file, no build). |
+| `site/manage/index.html` | `/manage` — the admin page for the files. |
+| `site/wrangler.jsonc` | The website Worker `koilos-site` ({site}, www.{site}). |
+| `api/worker.js` | The API Worker `nigunim-api` ({api}): the site's file list (`GET /?folder=`), the `/manage` routes, `/radio`, `/playlist.m3u`, `/stations`, `POST /feedback`. |
+| `api/wrangler.jsonc` | Its config — read the comments before changing it. |
+| `docs/MANAGE.md` | Technical details of `/manage`, the worker, `/radio`, even volume. |
+| `docs/STATIONS.md` | Ready-to-paste station URLs. |
 
 ## How it runs
 
-- **Site:** GitHub Pages from branch `main`, root; the domain is in `CNAME`.
-  A push to `main` is live.
-- **Worker:** Cloudflare Workers Builds (Workers & Pages → the worker →
-  Settings → Build → connect this repo) deploys `manage/worker.js` on every
-  push to `main`, with the R2 bucket `stream` bound as `env.BUCKET`.
+Everything is in the Koilos Cloudflare account:
+
+- **Website:** Worker `koilos-site` — Workers & Pages → koilos-site →
+  Settings → Build → connect this repo, root directory `site`.
+- **API:** Worker `nigunim-api` — same, root directory `api`. The R2 bucket
+  `stream` is bound as `env.BUCKET`.
+- A push to `main` deploys both. A broken `api/worker.js` takes the site down.
 - **Files:** R2 bucket `stream`, public at `https://{r2}`.
-- **Feedback form:** needs the worker secret `RESEND_API_KEY` (a Resend
+- **Feedback form:** needs the API worker secret `RESEND_API_KEY` (a Resend
   account with `koilos.org` verified). Without it the form opens the
   visitor's mail app instead.
-- **Analytics:** none yet — see the comment at the top of `index.html`.
+- **Analytics:** none in the page — see the comment at the top of
+  `site/index.html`.
 '''
 
 if __name__ == '__main__':
