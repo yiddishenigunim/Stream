@@ -20,6 +20,7 @@ there — check its history before reinventing.
 | `docs/NOTES.md` | People, services, decisions, lessons, history from past chats. |
 | `docs/OPEN.md` | Open work and unanswered questions. |
 | `docs/MOVE.md` | Checklist for moving the site + R2 to the partner's own domain/account. |
+| `tools/r2copy.py` | Copies/re-syncs the R2 bucket `stream` from our account to Koilos's (S3 API, keeps metadata). |
 
 ## Build / deploy
 

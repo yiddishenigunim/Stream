@@ -37,7 +37,14 @@ Last checked 2026-11-19. Remove an item when it is done.
   token can never exceed the member's role. Yoel changed it (2026-11-24) — now
   R2 works there (no buckets yet), members/workers readable; no workers.dev
   subdomain yet (opening Workers & Pages once creates it). Zone still
-  pending: registry nameservers still Squarespace's (step 7 not done). Zone `koilos.org` is
+  pending: registry nameservers still Squarespace's (step 7 not done). **R2 copied
+  2026-11-24** (owner: "יא, קאפיר"): bucket `stream` (ENAM) in the Koilos
+  account now holds all 3142 files / 21.32 GB with Content-Type and
+  `lufs`/`peak` metadata (`tools/r2copy.py verify`: 0 missing, 0 extra).
+  Our bucket untouched. Re-run `tools/r2copy.py copy` right before the switch
+  to pick up later uploads. Workers plan for their account still open:
+  free may be too tight for `/radio` (CPU); Workers Paid is $5/month — owner
+  to check which plan our account has. Zone `koilos.org` is
   **pending**, Cloudflare nameservers `eleanor.ns.cloudflare.com` /
   `ken.ns.cloudflare.com`. DNS check 2026-11-23: all 5 Google MX, SPF and
   DKIM (matches the public one) are there, DNS only. The 4 apex A records,
