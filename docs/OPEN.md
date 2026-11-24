@@ -50,4 +50,19 @@ Last checked 2026-11-19. Remove an item when it is done.
   DKIM (matches the public one) are there, DNS only. The 4 apex A records,
   `www` and `_domainconnect` (Squarespace) were Proxied; switched to DNS
   only by Claude on the owner's "יא, טויש" (2026-11-23). All 13 records are
-  now DNS only — the zone is ready for step 7.
+  now DNS only — the zone is ready for step 7.- **Hand the code to Koilos** (owner, 2026-11-24: "איך וויל זיי געבן די
+  גאנצע גיט האב רעפא … זיכער מאכן אז עס האט נישט קיין שום קיס און קיין שום
+  סיקרעטס וואס פארבינדט זיי צום עכטן אוצר הניגונים ריפאו"). Audit of all 104
+  commits (all branches), 2026-11-24: **no secrets** — no API tokens, keys,
+  passwords, account ids or token ids; worker secrets live only in Cloudflare.
+  Not secret but tied to us: our domains (`CNAME`, `wrangler.jsonc` routes,
+  `stream-api.`/`r2.oitzerhanigunim.org` in `index.html`, `manage/index.html`,
+  `worker.js`, `STATIONS.md`), our GA4 id and Cloudflare Web Analytics beacon
+  token in `index.html`, `FEEDBACK_FROM` on our domain, the footer credit,
+  `tools/r2copy.py` (OITZER_* env names), and the docs (our other workers,
+  the sister repo, billing remarks, owner's notes). The history also carries
+  the committers' personal e-mails and old notes (e.g. a third party's
+  address). Suggested: give them a **fresh repo with one commit** (no
+  history), made at switch time with their domains and their analytics, docs
+  trimmed to what they need — not a transfer of this repo. Waiting on the
+  owner's choice and on their GitHub account.
