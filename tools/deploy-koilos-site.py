@@ -19,7 +19,7 @@ import base64, hashlib, json, mimetypes, os, sys, urllib.request, uuid
 TOKEN = os.environ['OITZER_CF_API_TOKEN']
 API = 'https://api.cloudflare.com/client/v4'
 SCRIPT = 'koilos-site'
-FILES = ['index.html', 'manage/index.html']
+FILES = ['index.html', 'manage/index.html']  # under SITE_DIR/site/
 
 
 def call(method, path, body=None, headers=None, token=TOKEN, raw=False):
@@ -54,7 +54,7 @@ def main(site):
 
     blobs, manifest = {}, {}
     for rel in FILES:
-        data = open(os.path.join(site, rel), 'rb').read()
+        data = open(os.path.join(site, 'site', rel), 'rb').read()
         ext = os.path.splitext(rel)[1]
         h = hashlib.sha256(base64.b64encode(data) + ext.lstrip('.').encode()).hexdigest()[:32]
         blobs[h] = (rel, data)
