@@ -40,7 +40,23 @@ Last checked 2026-11-19. Remove an item when it is done.
   active on Cloudflare 2026-11-24 03:37 UTC** (step 7 done; registry NS =
   eleanor/ken, DNSSEC off). Checked from Google and Cloudflare public DNS:
   MX, SPF, DKIM, apex A and `www` all resolve as before; koilos.org and www
-  answer 200. Next: their worker + `r2.koilos.org` + `stream.koilos.org`. **R2 copied
+  answer 200. 2026-11-24 set up in their account: `r2.koilos.org`
+  on their bucket (like ours: minTLS 1.0, no CORS) and the worker
+  `nigunim-api` (clean code from `make-koilos-repo.py`, R2 binding `stream`,
+  observability) on `stream-api.koilos.org`, uploaded by API (Workers Builds
+  not connected yet — no repo of theirs yet). Tested: same 775 files for
+  שיינע מארשן as the old API, `/stations`, `/feedback`, `/radio` streams, and
+  the clean site (local copy) plays from `r2.koilos.org` with requests only to
+  koilos hosts. Free Workers plan for now. Still to do, in order: (1) owner
+  creates an empty public repo in our org, Claude pushes the clean commit
+  (`--no-credit`); (2) Yoel opens a GitHub account; (3) owner transfers the
+  repo to him; (4) GitHub Pages on it + DNS `stream` CNAME → their
+  `github.io`; connect Workers Builds in their account to the repo; (5) final
+  `tools/r2copy.py copy`; (6) redirects on our zone: `stream.`,
+  `stream-api.` (path+query kept, 308 for POST) and `r2.oitzerhanigunim.org`
+  → the koilos names; Yoel updates Tel Tech 2‑5‑6 and the speakers anyway;
+  (7) weeks later, with the owner's OK: delete our worker routes/bucket,
+  archive this repo. **R2 copied
   2026-11-24** (owner: "יא, קאפיר"): bucket `stream` (ENAM) in the Koilos
   account now holds all 3142 files / 21.32 GB with Content-Type and
   `lufs`/`peak` metadata (`tools/r2copy.py verify`: 0 missing, 0 extra).
