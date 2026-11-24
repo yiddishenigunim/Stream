@@ -36,8 +36,11 @@ Last checked 2026-11-19. Remove an item when it is done.
   Domain Administrator (+ Domain DNS) — no account-wide R2/Workers, and a
   token can never exceed the member's role. Yoel changed it (2026-11-24) — now
   R2 works there (no buckets yet), members/workers readable; no workers.dev
-  subdomain yet (opening Workers & Pages once creates it). Zone still
-  pending: registry nameservers still Squarespace's (step 7 not done). **R2 copied
+  subdomain yet (opening Workers & Pages once creates it). **koilos.org
+  active on Cloudflare 2026-11-24 03:37 UTC** (step 7 done; registry NS =
+  eleanor/ken, DNSSEC off). Checked from Google and Cloudflare public DNS:
+  MX, SPF, DKIM, apex A and `www` all resolve as before; koilos.org and www
+  answer 200. Next: their worker + `r2.koilos.org` + `stream.koilos.org`. **R2 copied
   2026-11-24** (owner: "יא, קאפיר"): bucket `stream` (ENAM) in the Koilos
   account now holds all 3142 files / 21.32 GB with Content-Type and
   `lufs`/`peak` metadata (`tools/r2copy.py verify`: 0 missing, 0 extra).
