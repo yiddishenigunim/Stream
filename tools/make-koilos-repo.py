@@ -5,8 +5,8 @@ The owner (2026-11-24): give Koilos the code as their own, with nothing that
 ties it to Oitzer HaNigunim — "יא, מאך א ריינעם רעפא". This makes a NEW git
 repo with ONE commit (no history, so no committers' e-mails or old notes):
 
-  * domains → theirs (stream / stream-api / r2 .koilos.org — change KOILOS_*
-    below if they pick other names),
+  * domains → theirs (site on koilos.org itself, API stream-api.koilos.org,
+    files r2.koilos.org — change KOILOS_* below if that changes),
   * our GA4 property and our Cloudflare Web Analytics beacon removed (the
     page's Analytics wrapper is a no-op without gtag; a comment shows where to
     add their own),
@@ -14,8 +14,9 @@ repo with ONE commit (no history, so no committers' e-mails or old notes):
   * our internal docs (CLAUDE.md, docs/, tools/) left out; a short README.md
     for them instead.
 
-The footer credit "פראיעקט דורך אוצר הניגונים" (a public link) is kept on
-purpose; drop it with --no-credit.
+The footer credit "פראיעקט דורך אוצר הניגונים" stays unless --no-credit is
+given. The owner wants nothing left of us (2026-11-24) — build with
+--no-credit.
 
 Every edit asserts that its anchor exists, and the result is scanned: any
 "oitzer" / "yiddishenigunim" / our ids left (other than the credit) fails
@@ -25,7 +26,7 @@ the build. Run at switch time, then push the output to their GitHub repo:
 """
 import os, re, shutil, subprocess, sys
 
-KOILOS_SITE = 'stream.koilos.org'
+KOILOS_SITE = 'koilos.org'  # owner 2026-11-24: koilos.org itself is the stream
 KOILOS_API = 'stream-api.koilos.org'
 KOILOS_R2 = 'r2.koilos.org'
 AUTHOR = 'Koilos <music@koilos.org>'

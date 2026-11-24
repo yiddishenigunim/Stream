@@ -21,6 +21,7 @@ there — check its history before reinventing.
 | `docs/OPEN.md` | Open work and unanswered questions. |
 | `docs/MOVE.md` | Checklist for moving the site + R2 to the partner's own domain/account. |
 | `tools/make-koilos-repo.py` | Builds the clean one-commit repo for Koilos (their domains, no ties to us). |
+| `tools/deploy-koilos-site.py` | Uploads the clean site's pages to Koilos's Worker `koilos-site` (koilos.org). |
 | `tools/r2copy.py` | Copies/re-syncs the R2 bucket `stream` from our account to Koilos's (S3 API, keeps metadata). |
 
 ## Build / deploy
