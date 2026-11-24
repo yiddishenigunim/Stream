@@ -64,5 +64,12 @@ Last checked 2026-11-19. Remove an item when it is done.
   the committers' personal e-mails and old notes (e.g. a third party's
   address). Suggested: give them a **fresh repo with one commit** (no
   history), made at switch time with their domains and their analytics, docs
-  trimmed to what they need — not a transfer of this repo. Waiting on the
-  owner's choice and on their GitHub account.
+  trimmed to what they need — not a transfer of this repo. Owner chose it
+  ("יא, מאך א ריינעם רעפא", 2026-11-24): `tools/make-koilos-repo.py OUT`
+  builds it (one commit by "Koilos <music@koilos.org>", 9 files: site,
+  /manage, worker, its README/STATIONS, wrangler.jsonc with only
+  `stream-api.koilos.org`, CNAME `stream.koilos.org`, a short README; no GA4,
+  no CF beacon; feedback from `noreply@koilos.org`; fails if any tie to us is
+  left). The footer credit "פראיעקט דורך אוצר הניגונים" is kept on purpose
+  (`--no-credit` drops it). Run it at switch time, then push to their repo.
+  Waiting on their GitHub account.
