@@ -57,9 +57,12 @@ Last checked 2026-11-19. Remove an item when it is done.
   public). Live-tested on desktop and phone: plays from `r2.koilos.org`, no
   "אוצר הניגונים", `/manage/` shows the PIN gate. The clean repo now has
   CNAME `koilos.org`. When their GitHub repo exists, either connect Workers
-  Builds to it for `koilos-site` too, or move the site to GitHub Pages. Still to do, in order: (1) the owner made
-  a **private** repo (2026-11-24; name not told yet — not visible to Claude's
-  GitHub access); Claude pushes the clean commit (`--no-credit`, layout
+  Builds to it for `koilos-site` too, or move the site to GitHub Pages. Still to do, in order: (1) their repo is
+  **`Koilos-org/koilos-stream`** (private, in their GitHub organization
+  `Koilos-org`, 2026-11-25). Claude's GitHub login (`dominosolutions`) has no
+  access yet — the owner was invited to the org as `yiddishenigunim`; the
+  repo needs `dominosolutions` as a collaborator/member and the Claude GitHub
+  App installed on `Koilos-org` with access to it; Claude pushes the clean commit (`--no-credit`, layout
   `api/` + `site/`); (2) Yoel opens a free GitHub account and a free
   organization, invites the owner as Owner; (3) owner moves the repo into
   that organization; (4) connect Workers Builds in their Cloudflare to the
