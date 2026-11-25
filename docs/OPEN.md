@@ -59,10 +59,10 @@ Last checked 2026-11-19. Remove an item when it is done.
   CNAME `koilos.org`. When their GitHub repo exists, either connect Workers
   Builds to it for `koilos-site` too, or move the site to GitHub Pages. Still to do, in order: (1) their repo is
   **`Koilos-org/koilos-stream`** (private, in their GitHub organization
-  `Koilos-org`, 2026-11-25). Claude's GitHub login (`dominosolutions`) has no
-  access yet — the owner was invited to the org as `yiddishenigunim`; the
-  repo needs `dominosolutions` as a collaborator/member and the Claude GitHub
-  App installed on `Koilos-org` with access to it; Claude pushes the clean commit (`--no-credit`, layout
+  `Koilos-org`, 2026-11-25). The owner installed the Claude GitHub App on
+  `Koilos-org`; **the clean commit is pushed** to its `main` (2026-11-25,
+  one commit `3db5f93` by "Koilos", built with `--no-credit`, 10 files,
+  no oitzer/yiddishenigunim/committer e-mails); Claude pushes the clean commit (`--no-credit`, layout
   `api/` + `site/`); (2) Yoel opens a free GitHub account and a free
   organization, invites the owner as Owner; (3) owner moves the repo into
   that organization; (4) connect Workers Builds in their Cloudflare to the
