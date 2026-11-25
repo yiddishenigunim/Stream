@@ -1,9 +1,18 @@
 # Stream — CLAUDE.md
 
-The stream partner's site: **https://stream.oitzerhanigunim.org** — a Yiddish
-(RTL) web player that streams nigunim from Cloudflare R2, plus `/manage` (an
-admin page for the files) and `/radio` station URLs for speakers and the
-partner's phone hotline. Sister repo of `yiddishenigunim/site` (the main
+**Moved (2026-11-25).** The stream is now Koilos's own: **https://koilos.org**,
+code in their private repo `Koilos-org/koilos-stream` (Workers Builds deploys
+it to their Cloudflare). This repo's `index.html`, `404.html` and
+`manage/index.html` only redirect old `stream.oitzerhanigunim.org` links to the
+same path on koilos.org; the player's source lives in their repo now. Our
+`nigunim-api` worker still answers on `stream-api.` (hotline/speakers until
+they switch) and our `stream` bucket / `r2.oitzerhanigunim.org` are also used
+by the main site — see `docs/OPEN.md` before removing anything.
+
+Before the move: the stream partner's site was **https://stream.oitzerhanigunim.org**
+— a Yiddish (RTL) web player that streams nigunim from Cloudflare R2, plus
+`/manage` (an admin page for the files) and `/radio` station URLs for speakers
+and the partner's phone hotline. Sister repo of `yiddishenigunim/site` (the main
 oitzerhanigunim.org site); some features (e.g. even loudness) were copied from
 there — check its history before reinventing.
 
@@ -11,8 +20,8 @@ there — check its history before reinventing.
 
 | Path | What |
 | --- | --- |
-| `index.html` | The whole public player (one file, no build). Folders: `FOLDERS`, Shabbos switching: `TIME_BASED_FOLDERS`. GA4 property of its own. |
-| `manage/index.html` | `/manage` admin page (PIN gate, upload/delete/play, *Even volume*). |
+| `index.html` · `404.html` | Since 2026-11-25: redirect to the same path on https://koilos.org (the player itself is in `Koilos-org/koilos-stream`; the last version here is in git history). |
+| `manage/index.html` | Since 2026-11-25: redirect to koilos.org/manage (was the `/manage` admin page). |
 | `manage/worker.js` | The **`nigunim-api`** Cloudflare Worker: `GET /?folder=` (the site's list call), management routes, `/radio`, `/playlist.m3u`, `/stations`, `POST /feedback`. |
 | `manage/README.md` | Full technical docs of `/manage`, the worker API, `/radio`, loudness. |
 | `manage/STATIONS.md` | Ready-to-paste station URLs. |
@@ -20,8 +29,7 @@ there — check its history before reinventing.
 | `docs/NOTES.md` | People, services, decisions, lessons, history from past chats. |
 | `docs/OPEN.md` | Open work and unanswered questions. |
 | `docs/MOVE.md` | Checklist for moving the site + R2 to the partner's own domain/account. |
-| `tools/make-koilos-repo.py` | Builds the clean one-commit repo for Koilos (their domains, no ties to us). |
-| `tools/deploy-koilos-site.py` | Uploads the clean site's pages to Koilos's Worker `koilos-site` (koilos.org). |
+| `tools/make-koilos-repo.py` · `tools/deploy-koilos-site.py` | Retired 2026-11-25 (built/uploaded the clean Koilos repo from the old player, which is no longer in this tree). |
 | `tools/r2copy.py` | Copies/re-syncs the R2 bucket `stream` from our account to Koilos's (S3 API, keeps metadata). |
 
 ## Build / deploy

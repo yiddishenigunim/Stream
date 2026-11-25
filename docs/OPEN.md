@@ -112,3 +112,20 @@ Last checked 2026-11-19. Remove an item when it is done.
   left). The footer credit "פראיעקט דורך אוצר הניגונים" is kept on purpose
   (`--no-credit` drops it). Run it at switch time, then push to their repo.
   Waiting on their GitHub account.
+- **The switch (2026-11-25, owner: "יא, טויש די לינקס").** Done: final
+  `tools/r2copy.py copy` (15 new files; their bucket also keeps one Chanukah
+  file, "ויהיו זרעי - וויזניץ", that was deleted from ours after the first
+  copy); old site → redirect pages on GitHub Pages (`index.html`,
+  `404.html`, `manage/index.html` → same path on koilos.org). A Cloudflare
+  Redirect Rule would be a true 301 but the token has no Rulesets permission
+  on oitzerhanigunim.org. **Not redirected on purpose:**
+  `stream-api.oitzerhanigunim.org` keeps serving (from our bucket, same files
+  as theirs) until Yoel moves Tel Tech 2‑5‑6 and the office speakers to
+  `stream-api.koilos.org` — a redirect could silence the hotline if Tel
+  Tech doesn't follow redirects. **`r2.oitzerhanigunim.org` and our `stream`
+  bucket must stay:** the main site uses them — `worker.js` "R2 bucket folder
+  (r2:prefix)" import (editors, `env.stream`, links stored as
+  `r2.oitzerhanigunim.org/...`) and the maintenance-mode speaker
+  (`js/page-home-info.js` `MAINTENANCE_STREAM_API`/`_R2`). Check whether
+  recordings in the main DB point at `r2.oitzerhanigunim.org` before ever
+  deleting the bucket.
