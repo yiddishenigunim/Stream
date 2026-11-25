@@ -2,10 +2,6 @@
 
 Last checked 2026-11-19. Remove an item when it is done.
 
-- **Hotline URLs with `&gain=4.5`?** (since 2026-08-19) Claude asked whether to
-  append `&gain=4.5` to the station URLs in the Tel Tech portal; no answer in
-  the chat. Ask the owner whether it was done, and whether the hotline still
-  sounds quiet now that even volume is live.
 - **Bot Fight Mode** (since 2026-07-06) — unknown whether it was turned off /
   a WAF Skip rule added for `stream-api.oitzerhanigunim.org`. Only matters if
   big uploads in `/manage` fail again.
@@ -129,3 +125,10 @@ Last checked 2026-11-19. Remove an item when it is done.
   (`js/page-home-info.js` `MAINTENANCE_STREAM_API`/`_R2`). Check whether
   recordings in the main DB point at `r2.oitzerhanigunim.org` before ever
   deleting the bucket.
+- **Tel Tech switched (2026-11-25, the owner did it):** the hotline (menu
+  2‑5‑6) now points at `https://stream-api.koilos.org/radio?station=sfirah&gain=4.5`
+  — their worker, folder "מועדים וזמנים/ספירה/וואכן", with the +4.5 dB that
+  was recommended in August (so that old open question is answered).
+  Checked: the URL streams audio/mpeg. Not yet seen a real hotline call in
+  their worker's logs — confirm with a test call. Still to switch: the office
+  speakers (Music Assistant); then redirect the old `stream-api.`.
