@@ -132,3 +132,15 @@ Last checked 2026-11-19. Remove an item when it is done.
   Checked: the URL streams audio/mpeg. Not yet seen a real hotline call in
   their worker's logs — confirm with a test call. Still to switch: the office
   speakers (Music Assistant); then redirect the old `stream-api.`.
+- **Old site redirect is a real 301 now (2026-11-25):** the owner added
+  Single Redirect to the token; a Cloudflare Single Redirect rule on
+  oitzerhanigunim.org ("Old stream site -> koilos.org") sends
+  `stream.oitzerhanigunim.org/<path>?<query>` to `https://koilos.org/<path>`
+  (301, query kept). It runs before GitHub Pages, so this repo's redirect
+  pages are only a fallback — the repo can be archived or deleted without
+  breaking the old link. Next, after the office speakers switch: a second rule
+  for `stream-api.` / `nigunim-api.oitzerhanigunim.org` →
+  `stream-api.koilos.org` (keep path + query), then delete our worker
+  `nigunim-api` and give those two hostnames a proxied dummy DNS record
+  (AAAA `100::`) so the rule still fires. The `stream` bucket and
+  `r2.oitzerhanigunim.org` stay (main site).
