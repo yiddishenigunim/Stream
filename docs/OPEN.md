@@ -65,8 +65,13 @@ Last checked 2026-11-19. Remove an item when it is done.
   no oitzer/yiddishenigunim/committer e-mails); Claude pushes the clean commit (`--no-credit`, layout
   `api/` + `site/`); (2) Yoel opens a free GitHub account and a free
   organization, invites the owner as Owner; (3) owner moves the repo into
-  that organization; (4) connect Workers Builds in their Cloudflare to the
-  repo — `nigunim-api` root `api`, `koilos-site` root `site`; (5) final
+  that organization; (4) **Workers Builds connected 2026-11-25**: the owner
+  installed "Cloudflare Workers and Pages" on Koilos-org and connected
+  `koilos-site` in the dashboard (the account↔GitHub link can only be made
+  there); Claude fixed its root to `/site` and added the `nigunim-api`
+  trigger (root `/api`) by API, and made the workers.dev subdomain `koilos`.
+  Test push (README) → both builds succeeded, site/API/manage/radio checked
+  live. Their repo is now the source: a push to its `main` deploys both; (5) final
   `tools/r2copy.py copy`; (6) redirects on our zone: `stream.` → `https://koilos.org`,
   `stream-api.` (path+query kept, 308 for POST) and `r2.oitzerhanigunim.org`
   → the koilos names; Yoel updates Tel Tech 2‑5‑6 and the speakers anyway;
